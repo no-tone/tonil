@@ -1,3 +1,191 @@
+# no-tone Starter Template (Bun Edition)
+
+## Core Stack
+
+-   Bun (runtime, package manager)
+-   Turborepo
+-   Biome
+-   Next.js (App Router + PWA)
+-   Expo
+-   Cloudflare Workers
+-   Hono
+-   Neon PostgreSQL
+-   Drizzle ORM
+-   Better Auth (Email/Password)
+-   Cloudflare R2
+-   Zod
+-   TanStack Query
+-   Vitest
+
+## Accounts
+
+-   Cloudflare
+-   Neon
+-   GitHub
+
+## Install
+
+-   Install Bun
+-   Install Git
+-   Install Node.js (required by some tooling)
+
+``` bash
+bun --version
+```
+
+## Repository Layout
+
+``` text
+no-tone/
+├── apps/
+│   ├── web/
+│   ├── mobile/
+│   └── api/
+├── packages/
+│   ├── auth/
+│   ├── config/
+│   ├── db/
+│   ├── types/
+│   ├── ui/
+│   └── validation/
+├── biome.json
+├── turbo.json
+├── bun.lock
+└── package.json
+```
+
+## Create Repository
+
+``` bash
+mkdir no-tone
+cd no-tone
+
+bunx create-turbo@latest .
+```
+
+## Create Apps
+
+### Web
+
+``` bash
+bunx create-next-app@latest apps/web
+```
+
+Choose: - TypeScript - App Router - Tailwind CSS - Turbopack
+
+### Mobile
+
+``` bash
+bunx create-expo-app apps/mobile
+```
+
+### API
+
+``` bash
+bun create cloudflare@latest apps/api
+```
+
+Choose: - Hono - TypeScript - Workers
+
+## Install Dependencies
+
+``` bash
+bun add \
+drizzle-orm \
+@neondatabase/serverless \
+better-auth \
+hono \
+zod \
+@tanstack/react-query
+```
+
+Development:
+
+``` bash
+bun add -d \
+drizzle-kit \
+@biomejs/biome \
+vitest \
+typescript \
+@types/node \
+dotenv
+```
+
+## Database
+
+-   Neon PostgreSQL
+-   Drizzle ORM
+-   Shared package: packages/db
+
+## Authentication
+
+Better Auth
+
+Initial providers: - Email/password
+
+Later: - Google - Apple - Passkeys
+
+## Storage
+
+Cloudflare R2
+
+## API
+
+-   Hono
+-   Cloudflare Workers
+-   https://api.no-tone.com
+
+## Frontend
+
+-   https://no-tone.com
+-   PWA enabled
+
+## Shared Packages
+
+-   db
+-   auth
+-   validation
+-   types
+-   ui
+-   config
+
+## Environment
+
+apps/web/.env.local
+
+``` env
+NEXT_PUBLIC_API_URL=https://api.no-tone.com
+```
+
+apps/api/.dev.vars
+
+``` env
+DATABASE_URL=
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=https://api.no-tone.com
+R2_BUCKET=
+```
+
+## Nice-to-have Later
+
+-   Stripe
+-   Resend
+-   PostHog
+-   Sentry
+-   GitHub Actions
+-   Rate limiting
+-   Background jobs
+-   Redis (only if required)
+
+## Goal
+
+Create a reusable starter template that can be cloned for future SaaS
+projects with authentication, database, storage, web, mobile, and API
+already configured.
+
+---
+
+
 # Turborepo starter
 
 This Turborepo starter is maintained by the Turborepo core team.
