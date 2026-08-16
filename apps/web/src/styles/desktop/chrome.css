@@ -374,8 +374,8 @@ html.vk-theming * {
     color 0.5s ease,
     border-color 0.5s ease,
     box-shadow 0.5s ease,
-    /* biome-ignore lint/complexity/noImportantStyles: see comment above */
-    fill 0.5s ease !important;
+    /* biome-ignore lint/complexity/noImportantStyles: see comment above */ fill
+    0.5s ease !important;
 }
 html.vk-theming .vk-canvas,
 html.vk-theming .vk-cursor,
