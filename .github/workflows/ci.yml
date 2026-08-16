@@ -60,7 +60,7 @@ jobs:
         run: bun run build
 
       - name: Deploy api
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: eda936c59e56271336bc33974151f122
@@ -68,7 +68,7 @@ jobs:
           workingDirectory: apps/api
 
       - name: Deploy web
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: eda936c59e56271336bc33974151f122
@@ -76,7 +76,7 @@ jobs:
           workingDirectory: apps/web
 
       - name: Deploy dashboard
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: eda936c59e56271336bc33974151f122
