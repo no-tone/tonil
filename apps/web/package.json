@@ -26,7 +26,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@repo/typescript-config": "*",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.2.0",
     "jsdom": "^27.0.0",
     "typescript": "catalog:",
     "vitest": "catalog:",
