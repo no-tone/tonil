@@ -1,0 +1,29 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dashboard",
+  "main": "./src/worker.ts",
+  "compatibility_date": "2026-07-26",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "upload_source_maps": true,
+  // Astro's Cloudflare adapter session support (unused by this app today,
+  // but the adapter provisions it regardless). Auto-created by `wrangler
+  // deploy` on first deploy; pinned here so future deploys reuse it instead
+  // of relying on re-provisioning.
+  "kv_namespaces": [
+    {
+      "binding": "SESSION",
+      "id": "ea94356d2dac4612bf9acc460b3bef8c"
+    }
+  ]
+}

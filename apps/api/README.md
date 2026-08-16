@@ -1,21 +1,24 @@
-```txt
-npm install
-npm run dev
+# api
+
+The Hono API behind api.no-tone.com, on Cloudflare Workers.
+
+```bash
+bun run dev
+bun run test
+bun run deploy
 ```
 
-```txt
-npm run deploy
-```
+## Routes
 
-[For generating/synchronizing types based on your Worker configuration run](https://developers.cloudflare.com/workers/wrangler/commands/#types):
+- `GET /projects` — GitHub repos, cached at the edge with ETag revalidation and an in-memory fallback (`src/services/projects-cache.ts`)
+- `GET /status` — self-hosted app health probes + Tailscale device status (`src/services/app-health.ts`)
+- `POST /csp-report`, `GET /csp-report` — CSP violation report ingestion, Zod-validated
+- `GET /info/:slug` — JSX-rendered (or markdown, via `Accept: text/markdown`) info pages for `no-tone` and `dashboard`, backed by `packages/content`'s `site-info.ts`
+- `/api/auth/*` — Better Auth (email/password); mounted at this path since Better Auth's handler and ecosystem clients assume the `/api/auth` basePath by default
+- `/.well-known/api-catalog` — RFC 9727 catalog of the above
 
-```txt
-npm run cf-typegen
-```
+Regenerate `CloudflareBindings` types after touching `wrangler.jsonc`:
 
-Pass the `CloudflareBindings` as generics when instantiating `Hono`:
-
-```ts
-// src/index.ts
-const app = new Hono<{ Bindings: CloudflareBindings }>()
+```bash
+bun run cf-typegen
 ```

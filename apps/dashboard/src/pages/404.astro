@@ -1,0 +1,27 @@
+---
+// biome-ignore-all lint/correctness/noUnusedVariables: these are used in the
+// template below the frontmatter fence, which Biome's Astro support doesn't analyze.
+// biome-ignore-all lint/correctness/noUnusedImports: same reason.
+import BaseHead from "@repo/ui/BaseHead.astro";
+import "@repo/ui/styles/tokens.css";
+import "@repo/ui/styles/reset.css";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "../consts";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead
+      siteName={SITE_NAME}
+      siteUrl={SITE_URL}
+      title={SITE_TITLE}
+      description={SITE_DESCRIPTION}
+    />
+    <meta http-equiv="refresh" content="0; url=/" />
+  </head>
+  <body>
+    <noscript>
+      <p><a href="/">Go to home</a></p>
+    </noscript>
+  </body>
+</html>

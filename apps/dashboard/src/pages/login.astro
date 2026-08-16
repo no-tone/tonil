@@ -1,0 +1,113 @@
+---
+// biome-ignore-all lint/correctness/noUnusedVariables: these are used in the
+// template below the frontmatter fence, which Biome's Astro support doesn't analyze.
+// biome-ignore-all lint/correctness/noUnusedImports: same reason.
+import BaseHead from "@repo/ui/BaseHead.astro";
+import "@repo/ui/styles/tokens.css";
+import "@repo/ui/styles/reset.css";
+import "../styles/dashboard.css";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "../consts";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead
+      siteName={SITE_NAME}
+      siteUrl={SITE_URL}
+      title={`Log in — ${SITE_TITLE}`}
+      description={SITE_DESCRIPTION}
+    />
+  </head>
+  <body>
+    <header class="topbar">
+      <nav class="topbar__nav" aria-label="Primary">
+        <span class="topbar__title">self-hosted/</span>
+        <button
+          class="topbar__toggle"
+          type="button"
+          aria-label="Toggle theme"
+          title="Toggle theme"
+        >
+          <span class="topbar__toggleIcon" aria-hidden="true">☾</span>
+        </button>
+        <span></span>
+      </nav>
+    </header>
+
+    <main class="launcher" aria-label="Log in">
+      <section class="launcher__window loginWindow" aria-labelledby="login-title">
+        <header class="launcher__titlebar">
+          <h1 class="launcher__title" id="login-title">log in</h1>
+          <span></span>
+          <span class="launcher__note">no-tone</span>
+        </header>
+
+        <form class="loginForm" id="login-form" novalidate>
+          <label class="field" for="email">
+            <span class="label">email</span>
+            <span class="fieldControl">
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autocomplete="username"
+                required
+              />
+            </span>
+          </label>
+
+          <label class="field" for="password">
+            <span class="label">password</span>
+            <span class="fieldControl">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+              />
+            </span>
+          </label>
+
+          <p class="loginForm__error" id="login-error" role="alert" hidden></p>
+
+          <button class="loginForm__submit" type="submit" id="login-submit">
+            log in
+          </button>
+        </form>
+      </section>
+    </main>
+
+    <footer class="bottombar">
+      <nav class="bottombar__nav" aria-label="Footer">
+        <a
+          href="https://no-tone.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="bottombar__link">no-tone.com</a
+        >
+        <span class="bottombar__sep">/</span>
+        <a href="/" class="bottombar__link">self-hosted</a>
+      </nav>
+    </footer>
+
+    <script>
+      import { initThemeToggle } from "../scripts/theme";
+      import { wireLoginForm } from "../scripts/login-form";
+
+      initThemeToggle({
+        button: document.querySelector<HTMLButtonElement>(".topbar__toggle"),
+        icon: document.querySelector<HTMLElement>(".topbar__toggleIcon"),
+      });
+
+      wireLoginForm({
+        form: document.getElementById("login-form") as HTMLFormElement,
+        submitButton: document.getElementById(
+          "login-submit",
+        ) as HTMLButtonElement,
+        errorEl: document.getElementById("login-error") as HTMLElement,
+      });
+    </script>
+  </body>
+</html>

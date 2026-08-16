@@ -1,0 +1,590 @@
+/* ============================================================
+   apps/dashboard — page-specific layout & chrome.
+
+   Colors, fonts, spacing scale, and radii come from @repo/ui's shared
+   tokens.css; base reset (box-sizing, scrollbar, selection, focus ring,
+   links, html/body sizing) comes from @repo/ui's reset.css. This file only
+   holds what's genuinely specific to the launcher: the topbar/bottombar
+   chrome, the "window" card (with its own visible-on-both-themes shadow —
+   the shared --shadow-window token is tuned dark-on-dark and would be
+   invisible against this page's pure-black background), search/filter
+   controls, the app tile grid, and the up/down/vpn/checking status colors
+   (no shared semantic-status tokens exist yet).
+   ============================================================ */
+
+body {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  line-height: 1.55;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 24px 28px;
+  pointer-events: none;
+}
+
+.topbar__nav {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  width: 100%;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+}
+
+.topbar__title,
+.topbar__toggle {
+  background: var(--bg);
+  color: var(--chrome-fg);
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.topbar__title {
+  justify-self: start;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar__toggle {
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  justify-self: center;
+  pointer-events: auto;
+}
+
+.topbar__toggle:hover {
+  text-decoration: underline;
+}
+
+.topbar__logout {
+  justify-self: end;
+  font-size: 14px;
+  text-transform: lowercase;
+}
+
+.topbar__toggleIcon {
+  font-size: 22px;
+}
+
+.launcher {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 94px 28px 104px;
+}
+
+.launcher__window {
+  width: min(980px, 100%);
+  border: 1px solid var(--chrome-fg);
+  background: var(--bg);
+  box-shadow:
+    0 0 0 1px var(--bg),
+    14px 14px 0 rgba(0, 0, 0, 0.12);
+}
+
+html[data-theme="dark"] .launcher__window {
+  box-shadow:
+    0 0 0 1px var(--bg),
+    14px 14px 0 rgba(255, 255, 255, 0.16);
+}
+
+.launcher__titlebar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--chrome-fg);
+  color: var(--chrome-fg);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.launcher__title {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 16px;
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.launcher__note {
+  color: var(--text);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.refresh {
+  justify-self: end;
+  width: 30px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--chrome-fg);
+  cursor: pointer;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+}
+
+.refresh:hover {
+  text-decoration: underline;
+}
+
+.refresh svg {
+  width: 18px;
+  height: 18px;
+}
+
+.refresh.spinning svg {
+  animation: spin360 520ms ease-in-out;
+}
+
+@keyframes spin360 {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  color: var(--text);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+}
+
+.fieldControl {
+  display: flex;
+  align-items: center;
+  min-height: 43px;
+  border: 1px solid var(--border);
+  background: transparent;
+}
+
+.fieldControl:focus-within {
+  border-color: var(--selection-border);
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  margin-left: 10px;
+  color: var(--text);
+  flex: 0 0 auto;
+}
+
+input,
+select {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-strong);
+  padding: 10px;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+input::placeholder {
+  color: var(--text);
+}
+
+.select {
+  position: relative;
+}
+
+.select select {
+  cursor: pointer;
+  padding-right: 32px;
+}
+
+.select::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--text);
+  transform: translateY(-35%);
+  pointer-events: none;
+}
+
+.meta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 43px;
+  color: var(--text);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+}
+
+.tile {
+  position: relative;
+  z-index: 0;
+  min-width: 0;
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  transform: translateY(0);
+  transition:
+    border-color 120ms ease,
+    transform 120ms ease;
+}
+
+.tile:nth-child(2n) {
+  border-right: 0;
+}
+
+.tile:hover,
+.tile:focus-visible {
+  z-index: 1;
+  border-color: var(--selection-border);
+  transform: translateY(-1px);
+}
+
+.tile-inner {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  min-height: 94px;
+  padding: 14px;
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+}
+
+.logo :where(picture) {
+  display: grid;
+  place-items: center;
+}
+
+.logo :where(img) {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 0;
+  filter: grayscale(1) contrast(1.08);
+  image-rendering: auto;
+}
+
+.tile:hover .logo :where(img),
+.tile:focus-visible .logo :where(img) {
+  filter: none;
+}
+
+.appMeta {
+  min-width: 0;
+}
+
+.name {
+  color: var(--text-strong);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.pill {
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.pill + .pill::before {
+  content: "/";
+  margin-right: 6px;
+  color: var(--text);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+
+.status .dot {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--chrome-fg);
+  background: transparent;
+}
+
+.status[data-status="up"] {
+  color: #0b7a2a;
+}
+
+.status[data-status="up"] .dot {
+  background: #0b7a2a;
+}
+
+.status[data-status="down"] {
+  color: #b42318;
+}
+
+.status[data-status="down"] .dot {
+  background: #b42318;
+}
+
+.status[data-status="checking"] {
+  color: #946200;
+}
+
+.status[data-status="checking"] .dot {
+  background: #946200;
+}
+
+.status[data-status="vpn"] {
+  color: #1d4ed8;
+}
+
+.status[data-status="vpn"] .dot {
+  background: #1d4ed8;
+}
+
+html[data-theme="dark"] .status[data-status="up"] {
+  color: #86efac;
+}
+
+html[data-theme="dark"] .status[data-status="up"] .dot {
+  background: #86efac;
+}
+
+html[data-theme="dark"] .status[data-status="down"] {
+  color: #fca5a5;
+}
+
+html[data-theme="dark"] .status[data-status="down"] .dot {
+  background: #fca5a5;
+}
+
+html[data-theme="dark"] .status[data-status="checking"] {
+  color: #fbbf24;
+}
+
+html[data-theme="dark"] .status[data-status="checking"] .dot {
+  background: #fbbf24;
+}
+
+html[data-theme="dark"] .status[data-status="vpn"] {
+  color: #93c5fd;
+}
+
+html[data-theme="dark"] .status[data-status="vpn"] .dot {
+  background: #93c5fd;
+}
+
+.empty {
+  margin: 0;
+  padding: 18px 14px;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+  font-size: 16px;
+}
+
+.loginWindow {
+  width: min(380px, 100%);
+}
+
+.loginForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 16px;
+}
+
+.loginForm__error {
+  margin: 0;
+  color: #b42318;
+  font-size: 13px;
+}
+
+.loginForm__submit {
+  min-height: 43px;
+  border: 1px solid var(--chrome-fg);
+  background: transparent;
+  color: var(--text-strong);
+  cursor: pointer;
+}
+
+.loginForm__submit:hover {
+  background: var(--chrome-fg);
+  color: var(--bg);
+}
+
+.loginForm__submit:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.bottombar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  padding: 24px 28px 32px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.bottombar__nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+  pointer-events: auto;
+}
+
+.bottombar__link,
+.bottombar__sep {
+  color: var(--chrome-fg);
+  background: var(--bg);
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.bottombar__link {
+  text-decoration: none;
+}
+
+.bottombar__link:hover {
+  text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .refresh.spinning svg {
+    animation: none;
+    transition: border-color 120ms ease;
+    transform: none;
+  }
+}
+
+@media (max-width: 760px) {
+  body {
+    font-size: 16px;
+  }
+
+  .topbar {
+    padding: 22px 18px;
+  }
+
+  .launcher {
+    align-items: stretch;
+    padding: 86px 18px 98px;
+  }
+
+  .launcher__titlebar,
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .launcher__note,
+  .refresh,
+  .meta {
+    justify-self: start;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tile,
+  .tile:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .tile-inner {
+    grid-template-columns: 46px minmax(0, 1fr);
+  }
+
+  .logo {
+    width: 46px;
+    height: 46px;
+  }
+
+  .logo :where(img) {
+    width: 38px;
+    height: 38px;
+  }
+
+  .status {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .bottombar {
+    position: static;
+    padding: 20px 18px 28px;
+  }
+}

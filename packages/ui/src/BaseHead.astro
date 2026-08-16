@@ -1,0 +1,174 @@
+---
+// biome-ignore-all lint/correctness/noUnusedVariables: these are used in the
+// template below the frontmatter fence, which Biome's Astro support doesn't analyze.
+interface Props {
+  siteName: string;
+  siteUrl: string;
+  title: string;
+  description: string;
+  image?: string;
+  schema?: Record<string, unknown> | Array<Record<string, unknown>>;
+  /** Inlined, nonce'd stylesheet for the page. */
+  css?: string;
+  /** Override the viewport meta (e.g. to opt into safe-area insets). */
+  viewport?: string;
+  /** Discovery link for an RSS feed, if this app has one. */
+  rssTitle?: string;
+}
+
+const {
+  siteName,
+  siteUrl,
+  title,
+  description,
+  image = "/images/meta/og.png",
+  schema,
+  css,
+  viewport = "width=device-width,initial-scale=1",
+  rssTitle,
+} = Astro.props as Props;
+const styleCss = css ?? "";
+const cspNonce = Astro.locals.cspNonce;
+
+const canonicalURL = Astro.site
+  ? new URL(Astro.url.pathname, Astro.site)
+  : Astro.url;
+const ogImageUrl = new URL(image, Astro.url);
+const canonicalHref = canonicalURL.toString();
+const ogImageHref = ogImageUrl.toString();
+const ogImageWidth = image === "/images/meta/og.png" ? "1200" : undefined;
+const ogImageHeight = image === "/images/meta/og.png" ? "630" : undefined;
+const schemaItems = Array.isArray(schema) ? schema : schema ? [schema] : [];
+const defaultSchema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteName,
+    url: siteUrl,
+    description,
+    inLanguage: "en",
+  },
+];
+const resolvedSchema = [...defaultSchema, ...schemaItems];
+---
+
+<!-- Global Metadata -->
+<meta charset="utf-8" />
+<meta name="viewport" content={viewport} />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+<meta name="generator" content={Astro.generator} />
+<meta name="robots" content="index,follow" />
+<style nonce={cspNonce} set:html={styleCss}></style>
+
+<!-- Theme bootstrap (runs before first paint) -->
+<script is:inline nonce={cspNonce}>
+  (() => {
+    const STORAGE_KEY = "theme";
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const theme = stored === "light" || stored === "dark" ? stored : "dark";
+      document.documentElement.dataset.theme = theme;
+      if (stored !== theme) {
+        localStorage.setItem(STORAGE_KEY, theme);
+      }
+    } catch {
+      document.documentElement.dataset.theme = "dark";
+    }
+  })();
+</script>
+
+<!-- Shared client theme helpers, namespaced under window.tonil -->
+<script is:inline nonce={cspNonce}>
+  (() => {
+    const root = (window.tonil ??= {});
+    const THEME_KEY = "theme";
+
+    root.getStoredTheme = () => {
+      try {
+        const value = localStorage.getItem(THEME_KEY);
+        return value === "light" || value === "dark" ? value : null;
+      } catch {
+        return null;
+      }
+    };
+
+    root.applyTheme = (theme) => {
+      document.documentElement.dataset.theme = theme;
+    };
+
+    root.readTheme = () =>
+      root.getStoredTheme() ??
+      (document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+
+    root.syncTheme = (theme) => {
+      const resolved =
+        theme === "light" || theme === "dark" ? theme : root.readTheme();
+      root.applyTheme(resolved);
+      try {
+        localStorage.setItem(THEME_KEY, resolved);
+      } catch {
+        // no-op
+      }
+      return resolved;
+    };
+
+    root.setStoredTheme = (theme) => {
+      root.applyTheme(theme);
+      try {
+        localStorage.setItem(THEME_KEY, theme);
+      } catch {
+        // no-op
+      }
+      window.dispatchEvent(new CustomEvent("tonil:themechange", { detail: { theme } }));
+    };
+
+    window.addEventListener("tonil:themechange", (event) => {
+      if (!(event instanceof CustomEvent)) return;
+      root.syncTheme(event.detail?.theme);
+    });
+  })();
+</script>
+
+<!-- Canonical URL -->
+<link rel="canonical" href={canonicalHref} />
+<link rel="alternate" hreflang="en" href={canonicalHref} />
+<link rel="alternate" hreflang="x-default" href={canonicalHref} />
+
+{rssTitle && (
+  <link rel="alternate" type="application/rss+xml" title={rssTitle} href="/rss.xml" />
+)}
+
+<!-- Primary Meta Tags -->
+<title>{title}</title>
+<meta name="title" content={title} />
+<meta name="description" content={description} />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content={canonicalHref} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={ogImageHref} />
+<meta property="og:image:secure_url" content={ogImageHref} />
+{ogImageWidth && <meta property="og:image:width" content={ogImageWidth} />}
+{ogImageHeight && <meta property="og:image:height" content={ogImageHeight} />}
+<meta property="og:image:alt" content={`${siteName} preview`} />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:url" content={canonicalHref} />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImageHref} />
+<meta name="twitter:image:alt" content={`${siteName} preview`} />
+
+<script
+  type="application/ld+json"
+  is:inline
+  nonce={cspNonce}
+  set:html={JSON.stringify(resolvedSchema)}
+/>

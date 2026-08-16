@@ -1,0 +1,31 @@
+{
+  "name": "dashboard",
+  "description": "A minimal launcher for self-hosted apps.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "astro": "astro",
+    "build": "astro build",
+    "cf-typegen": "wrangler types",
+    "check": "astro build && astro check && wrangler deploy --dry-run",
+    "check-types": "astro check",
+    "deploy": "wrangler deploy",
+    "dev": "astro dev",
+    "preview": "astro build && wrangler dev",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "catalog:",
+    "@repo/content": "*",
+    "@repo/hono-middleware": "*",
+    "@repo/ui": "*",
+    "astro": "catalog:"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@repo/typescript-config": "*",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

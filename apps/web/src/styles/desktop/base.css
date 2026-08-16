@@ -1,0 +1,21 @@
+/* ============================================================
+   no-tone desktop — page-specific base overrides layered on top of
+   @repo/ui's generic reset. Everything generic (box-sizing, scrollbar
+   theming, links, code, selection, focus rings, .sr-only, …) lives in
+   @repo/ui/styles/reset.css now; only the single-page "desktop" layout
+   specifics stay here (the viewport is locked, not scrollable — panels
+   scroll internally in their own drawer instead).
+   ============================================================ */
+
+body {
+  overflow: hidden;
+  transition:
+    background 0.45s ease,
+    color 0.45s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
+}

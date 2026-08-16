@@ -1,0 +1,13 @@
+# prod
+dist/
+
+# dev
+.wrangler/
+.astro/
+
+# deps
+node_modules/
+
+# misc
+.DS_Store
+*.log
