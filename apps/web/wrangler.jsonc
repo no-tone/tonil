@@ -3,6 +3,11 @@
   "main": "./src/worker.ts",
   "compatibility_date": "2026-07-26",
   "compatibility_flags": ["nodejs_compat", "disable_nodejs_process_v2"],
+  "routes": [
+    { "pattern": "no-tone.com", "custom_domain": true },
+    { "pattern": "www.no-tone.com", "custom_domain": true }
+  ],
+  "placement": { "mode": "smart" },
   "triggers": {
     "crons": ["*/10 * * * *"]
   },

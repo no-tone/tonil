@@ -107,6 +107,7 @@
         "@astrojs/check": "^0.9.4",
         "@repo/typescript-config": "*",
         "astro": "catalog:",
+        "jsdom": "^27.0.0",
         "typescript": "catalog:",
         "vitest": "catalog:",
       },

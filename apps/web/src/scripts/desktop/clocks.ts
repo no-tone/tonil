@@ -19,11 +19,9 @@ export function formatTimeInZone(
 
 export interface ClockElements {
   london: HTMLElement | null;
-  sf: HTMLElement | null;
 }
 
 export function tickClocks(els: ClockElements, now: Date = new Date()): void {
   if (els.london)
     els.london.textContent = formatTimeInZone("Europe/London", now);
-  if (els.sf) els.sf.textContent = formatTimeInZone("America/Los_Angeles", now);
 }

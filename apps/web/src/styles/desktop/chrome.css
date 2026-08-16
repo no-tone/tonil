@@ -270,6 +270,15 @@ a {
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
+.vk-login {
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease);
+}
+.vk-login:hover,
+.vk-login:focus-visible {
+  color: var(--accent);
+}
 .vk-lang {
   display: inline-flex;
   align-items: center;

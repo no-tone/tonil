@@ -4,9 +4,9 @@
    `applyAccent`, which beats tokens.css's `html[data-theme=...]` rules on
    specificity). */
 
+import { readStored, writeStored } from "@repo/ui/storage";
 import type { Theme, TonilThemeHelpers } from "@repo/ui/theme-bootstrap";
 import { SIGS, type Sig } from "./data";
-import { readStored, writeStored } from "./storage";
 
 const SIG_KEY = "desktop:sig";
 const THEME_FADE_MS = 520;

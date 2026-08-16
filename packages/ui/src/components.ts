@@ -2,7 +2,7 @@
    Claude Design React components (Button / Tag / Input / CodeBlock) and
    reuse the same `vire-*` class names defined in desktop.css. */
 
-import { h } from "./dom";
+import { h } from "./dom.js";
 
 export function tag(text: string, tone?: "accent"): HTMLElement {
   return h(

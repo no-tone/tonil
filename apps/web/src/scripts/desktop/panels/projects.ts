@@ -1,8 +1,8 @@
 /* Projects panel — master/detail repo list with live README. */
 
-import { btnLink, openExternal, panelHead, tag } from "../components";
+import { btnLink, openExternal, panelHead, tag } from "@repo/ui/components";
+import { clear, h } from "@repo/ui/dom";
 import { fetchReadme, fetchRepos, type Lang, type Project, tt } from "../data";
-import { clear, h } from "../dom";
 
 type SortId = "recent" | "name" | "stars";
 

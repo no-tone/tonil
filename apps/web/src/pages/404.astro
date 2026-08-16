@@ -3,11 +3,11 @@
 // template below the frontmatter fence, which Biome's Astro support doesn't analyze.
 // biome-ignore-all lint/correctness/noUnusedVariables: ditto.
 import BaseHead from "@repo/ui/BaseHead.astro";
+import componentsCss from "@repo/ui/styles/components.css?inline";
 import resetCss from "@repo/ui/styles/reset.css?inline";
 import tokensCss from "@repo/ui/styles/tokens.css?inline";
 import { SITE_NAME, SITE_URL } from "../consts";
 import baseCss from "../styles/desktop/base.css?inline";
-import componentsCss from "../styles/desktop/components.css?inline";
 
 const nf = `
   html, body { height: auto; overflow: auto; }

@@ -5,6 +5,7 @@
    clocks.ts, storage.ts); this file's only job is composing them against the
    real DOM and event listeners. */
 
+import { readStored, writeStored } from "@repo/ui/storage";
 import type { TonilThemeHelpers } from "@repo/ui/theme-bootstrap";
 import { type ClockElements, tickClocks } from "./clocks";
 import { initCursor } from "./cursor";
@@ -19,7 +20,6 @@ import {
   resolveNavigationIntent,
 } from "./navigation";
 import type { PanelId } from "./panels";
-import { readStored, writeStored } from "./storage";
 import { ThemeController } from "./theme";
 
 declare global {
@@ -52,7 +52,6 @@ export function bootstrap(): void {
   const coordX = $("#vk-x");
   const coordY = $("#vk-y");
   const clockLondon = $("#vk-clock-london");
-  const clockSf = $("#vk-clock-sf");
 
   if (!canvas || !drawerEl || !sheetBody) return;
 
@@ -155,7 +154,7 @@ export function bootstrap(): void {
   }
 
   /* ---------- clocks ---------- */
-  const clockEls: ClockElements = { london: clockLondon, sf: clockSf };
+  const clockEls: ClockElements = { london: clockLondon };
   tickClocks(clockEls);
   window.setInterval(() => tickClocks(clockEls), 15000);
 

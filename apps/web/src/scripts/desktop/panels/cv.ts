@@ -1,7 +1,8 @@
 /* CV panel — a LinkedIn-style experience / education / skills page,
    led by a ranked "what I'm best at" grid. */
 
-import { chips, panelHead } from "../components";
+import { chips, panelHead } from "@repo/ui/components";
+import { h } from "@repo/ui/dom";
 import {
   BEST_AT,
   EDUCATION,
@@ -12,7 +13,6 @@ import {
   SPOKEN,
   tt,
 } from "../data";
-import { h } from "../dom";
 
 export function buildCv(lang: Lang): HTMLElement {
   const t = (k: string) => tt(lang, k);

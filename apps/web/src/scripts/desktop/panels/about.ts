@@ -2,9 +2,9 @@
    "how the globe works" code snippet. Languages-used is enriched from
    live repos when available. */
 
-import { chips, codeBlock, panelHead, tag } from "../components";
+import { chips, codeBlock, panelHead, tag } from "@repo/ui/components";
+import { clear, h } from "@repo/ui/dom";
 import { fetchRepos, type Lang, tt } from "../data";
-import { clear, h } from "../dom";
 
 const GLOBE_CODE = `export class Globe extends Server {
   onConnect(conn) {

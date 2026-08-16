@@ -15,16 +15,14 @@ describe("formatTimeInZone", () => {
 });
 
 describe("tickClocks", () => {
-  it("writes formatted times into the london/sf elements", () => {
+  it("writes the formatted time into the london element", () => {
     const london = document.createElement("b");
-    const sf = document.createElement("b");
     const now = new Date("2026-07-01T12:00:00Z");
-    tickClocks({ london, sf }, now);
+    tickClocks({ london }, now);
     expect(london.textContent).toBe(formatTimeInZone("Europe/London", now));
-    expect(sf.textContent).toBe(formatTimeInZone("America/Los_Angeles", now));
   });
 
   it("tolerates missing elements", () => {
-    expect(() => tickClocks({ london: null, sf: null })).not.toThrow();
+    expect(() => tickClocks({ london: null })).not.toThrow();
   });
 });

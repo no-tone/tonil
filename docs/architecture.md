@@ -34,7 +34,7 @@ Before this monorepo existed, no-tone.com and main-menu were separate repos, eac
 
 | Package | What it holds | Consumed by |
 |---|---|---|
-| `packages/ui` | `BaseHead.astro` (meta tags, theme bootstrap, OG/schema.org), design tokens + reset CSS | `apps/web`, `apps/dashboard` |
+| `packages/ui` | `BaseHead.astro` (meta tags, theme bootstrap, OG/schema.org), design tokens + reset CSS, a vanilla-DOM component kit (`components.ts`/`styles/components.css`) — see `packages/ui/README.md` | `apps/web`, `apps/dashboard` |
 | `packages/content` | Self-hosted app registry, GitHub-repo simplification, CSP-report summarizing, per-site info/markdown | `apps/api`, `apps/dashboard` |
 | `packages/validation` | Zod schemas, an RFC 7807 validation-failure hook for `@hono/zod-validator` | `apps/api` |
 | `packages/hono-middleware` | Composable Hono middleware + the framework-agnostic core both Astro apps call directly, including `requireCloudflareAccess()` | `apps/api`, `apps/web`, `apps/dashboard` |

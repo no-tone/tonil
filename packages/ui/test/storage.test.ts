@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { readStored, writeStored } from "../src/scripts/desktop/storage";
+import { readStored, writeStored } from "../src/storage";
 
 describe("storage", () => {
   beforeEach(() => {

@@ -3,9 +3,10 @@
 // template below the frontmatter fence, which Biome's Astro support doesn't analyze.
 // biome-ignore-all lint/correctness/noUnusedVariables: ditto.
 import BaseHead from "@repo/ui/BaseHead.astro";
-import resetCss from "@repo/ui/styles/reset.css?inline";
 // Design system, split into modules and concatenated so BaseHead can inline
 // it under the CSP nonce (a single same-origin <style>, no external sheet).
+import componentsCss from "@repo/ui/styles/components.css?inline";
+import resetCss from "@repo/ui/styles/reset.css?inline";
 import tokensCss from "@repo/ui/styles/tokens.css?inline";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "../consts";
 // Real content, server-rendered into a visually-hidden block so crawlers and
@@ -23,7 +24,6 @@ import {
 } from "../scripts/desktop/data";
 import baseCss from "../styles/desktop/base.css?inline";
 import chromeCss from "../styles/desktop/chrome.css?inline";
-import componentsCss from "../styles/desktop/components.css?inline";
 import panelsCss from "../styles/desktop/panels.css?inline";
 import responsiveCss from "../styles/desktop/responsive.css?inline";
 
@@ -244,9 +244,8 @@ const NODES = [
           <span aria-hidden="true">/</span>
           <button type="button" data-lang="pt">pt</button>
         </div>
-        <span class="vk-clock"
-          ><span data-i18n="citySf">san francisco</span>
-          <b id="vk-clock-sf">--:--</b></span
+        <a class="vk-clock vk-login" href="https://dash.no-tone.com" rel="noopener"
+          ><span data-i18n="login" data-arrow="">log in ↗</span></a
         >
       </div>
 
