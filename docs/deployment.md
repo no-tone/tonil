@@ -8,7 +8,7 @@ This monorepo replaces three previously-separate Cloudflare Workers (the old `no
 |---|---|---|
 | `no-tone.com` | `apps/web` | |
 | `www.no-tone.com` | `apps/web` (same Worker, second custom domain) | `apps/web/src/middleware.ts` already 301-redirects `www` → apex — **no separate Worker needed for this.** Whatever currently serves `www.no-tone.com` can be retired once this domain points at the `web` Worker instead. |
-| `dashboard.no-tone.com` (or whatever subdomain main-menu currently uses — check your DNS) | `apps/dashboard` | Pick the subdomain, update `apps/dashboard/src/consts.ts`/`site-info.ts` if it differs from `dashboard.no-tone.com` |
+| `dash.no-tone.com` | `apps/dashboard` | Replaces main-menu's `apps.no-tone.com` |
 | `api.no-tone.com` | `apps/api` | New — didn't exist as its own domain before |
 
 So: **3 Workers, same as today, but all three now come from this repo**, and the separate `www` Worker (if it's actually its own Worker rather than a DNS-only redirect rule) goes away entirely.
@@ -25,12 +25,6 @@ Do this during low-traffic hours, and don't delete anything old until the new Wo
 
 ```bash
 cd apps/api
-wrangler d1 create tonil-auth          # paste the returned database_id into wrangler.jsonc
-bun run scripts/generate-schema.ts > db/schema.sql   # only if packages/auth's options/plugins changed since db/schema.sql was last generated
-wrangler d1 execute tonil-auth --remote --file=db/schema.sql
-wrangler d1 execute tonil-auth --local --file=db/schema.sql   # keeps local `wrangler dev` in sync too
-wrangler secret put BETTER_AUTH_SECRET
-wrangler secret put BETTER_AUTH_API_KEY        # optional — enables the Better Auth Infrastructure dashboard (dash() plugin)
 wrangler secret put GITHUB_TOKEN               # optional — raises the GitHub API rate limit for /projects
 wrangler secret put TAILSCALE_OAUTH_CLIENT_ID  # optional — only if /status should report Tailscale device status
 wrangler secret put TAILSCALE_OAUTH_CLIENT_SECRET
@@ -63,7 +57,7 @@ In the dashboard: add `no-tone.com` and `www.no-tone.com` as custom domains on t
 
 ### 4. Cut over the dashboard subdomain
 
-Same as above, but for whichever subdomain currently serves main-menu, pointed at the new `dashboard` Worker.
+Same as above, but for `apps.no-tone.com` (main-menu's current subdomain) → `dash.no-tone.com`, pointed at the new `dashboard` Worker.
 
 ### 5. Confirm, then retire the old Workers
 

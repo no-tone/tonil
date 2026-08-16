@@ -71,12 +71,6 @@ select {
   text-decoration: underline;
 }
 
-.topbar__logout {
-  justify-self: end;
-  font-size: 14px;
-  text-transform: lowercase;
-}
-
 .topbar__toggleIcon {
   font-size: 22px;
 }
@@ -446,41 +440,6 @@ html[data-theme="dark"] .status[data-status="vpn"] .dot {
   border-top: 1px solid var(--border);
   color: var(--text);
   font-size: 16px;
-}
-
-.loginWindow {
-  width: min(380px, 100%);
-}
-
-.loginForm {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 18px 16px;
-}
-
-.loginForm__error {
-  margin: 0;
-  color: #b42318;
-  font-size: 13px;
-}
-
-.loginForm__submit {
-  min-height: 43px;
-  border: 1px solid var(--chrome-fg);
-  background: transparent;
-  color: var(--text-strong);
-  cursor: pointer;
-}
-
-.loginForm__submit:hover {
-  background: var(--chrome-fg);
-  color: var(--bg);
-}
-
-.loginForm__submit:disabled {
-  cursor: default;
-  opacity: 0.6;
 }
 
 .bottombar {

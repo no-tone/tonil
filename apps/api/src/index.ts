@@ -1,4 +1,3 @@
-import { TRUSTED_ORIGINS } from "@repo/auth";
 import {
   apiCatalog,
   problemJson,
@@ -7,7 +6,6 @@ import {
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { AppEnv } from "./env";
-import { authRoute } from "./routes/auth";
 import { cspReportRoute } from "./routes/csp-report";
 import { infoRoute } from "./routes/info";
 import { projectsRoute } from "./routes/projects";
@@ -15,13 +13,15 @@ import { statusRoute } from "./routes/status";
 
 const API_ORIGIN = "https://api.no-tone.com";
 
-// /projects (fetched from no-tone.com's own scripts), /status (fetched from
-// the dashboard's), and /api/auth/* (the dashboard's login form, credentialed)
-// are all cross-origin browser fetches, so they need real CORS — this API
-// had none until browser testing surfaced it. TRUSTED_ORIGINS is the same
-// list @repo/auth uses for Better Auth's own origin check, imported rather
-// than duplicated.
-const ALLOWED_ORIGINS = new Set(TRUSTED_ORIGINS);
+// /projects is fetched client-side from no-tone.com's browser scripts, so it
+// needs real CORS. /status and /csp-report aren't browser cross-origin
+// fetches — status is proxied server-to-server by apps/dashboard (see its
+// api/status.ts), and csp-report is posted by the browser's own CSP
+// reporting mechanism, not application JS subject to CORS.
+const ALLOWED_ORIGINS = new Set([
+  "https://no-tone.com",
+  "https://www.no-tone.com",
+]);
 const LOCAL_DEV_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
 const app = new Hono<AppEnv>();
@@ -37,9 +37,6 @@ app.use(
       }
       return null;
     },
-    // /api/auth/* needs the session cookie sent/readable cross-origin from
-    // apps/dashboard; harmless for the plain public GETs on the other routes.
-    credentials: true,
   }),
 );
 
@@ -71,10 +68,5 @@ app.route("/projects", projectsRoute);
 app.route("/status", statusRoute);
 app.route("/csp-report", cspReportRoute);
 app.route("/info", infoRoute);
-// Mounted at Better Auth's conventional default basePath (`/api/auth`), not
-// just `/auth` — its handler internally matches routes against that prefix,
-// and every ecosystem client/tool (including the Better Auth Infrastructure
-// dashboard's default "path to your Better Auth API" field) assumes it.
-app.route("/api/auth", authRoute);
 
 export default app;

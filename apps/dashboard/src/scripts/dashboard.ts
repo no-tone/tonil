@@ -5,7 +5,6 @@
  * This module is intentionally "thin glue" — branching logic that's worth
  * unit testing lives in the modules it imports, not here.
  */
-import { signOut } from "./auth-client";
 import { pingUrl } from "./client-probe";
 import { matchesFilter } from "./filter";
 import { fetchServerStatuses } from "./status-client";
@@ -89,11 +88,6 @@ export function initDashboard(): void {
   initThemeToggle({
     button: document.querySelector<HTMLButtonElement>(".topbar__toggle"),
     icon: document.querySelector<HTMLElement>(".topbar__toggleIcon"),
-  });
-
-  document.getElementById("logout")?.addEventListener("click", async () => {
-    await signOut();
-    window.location.href = "/login";
   });
 
   const tiles = collectTiles();

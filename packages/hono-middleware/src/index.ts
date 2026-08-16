@@ -3,6 +3,10 @@ export {
   type ApiCatalogOptions,
   apiCatalog,
 } from "./api-catalog";
+export {
+  type CloudflareAccessOptions,
+  requireCloudflareAccess,
+} from "./cloudflare-access";
 // NOTE: astro-security.ts is intentionally NOT re-exported here — it's the
 // one file in this package that's Astro-specific (types against Astro's
 // MiddlewareHandler + App.Locals), and this barrel is also imported by

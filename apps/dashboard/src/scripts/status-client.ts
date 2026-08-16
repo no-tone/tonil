@@ -1,13 +1,13 @@
 /**
  * Fetches apps/api's /status endpoint (server-side app health + Tailscale
- * device status — see apps/api/src/routes/status.ts). This app no longer
- * runs that probing logic itself; it moved to apps/api so both apps/web and
- * apps/dashboard can share one implementation.
+ * device status — see apps/api/src/routes/status.ts) via this app's own
+ * same-origin api/status.ts proxy, not api.no-tone.com directly — that
+ * route requires a Cloudflare Access JWT this page's own Access session can
+ * supply, but only via a same-origin request (see api/status.ts's comment).
  *
- * NOTE: this always hits the real production API
- * (https://api.no-tone.com/status), even in local `astro dev`. There is no
- * dev proxy for it — known, accepted limitation. Point a local apps/api
- * instance's port here manually if you need to test against it.
+ * NOTE: in local `astro dev`, api/status.ts's own fetch still hits the real
+ * production API with no Access JWT to forward, so it'll 401. Known,
+ * accepted limitation — there's no dev proxy for this yet.
  */
 
 import { fetchWithTimeout } from "@repo/content";
@@ -18,7 +18,7 @@ interface ServerStatus {
   tailnetDeviceOnline: boolean | null;
 }
 
-const STATUS_URL = "https://api.no-tone.com/status";
+const STATUS_URL = "/api/status";
 
 interface StatusResponseBody {
   apps?: { href: string; status: ServerAppStatus }[];
@@ -31,7 +31,6 @@ export async function fetchServerStatuses(
   try {
     const response = await fetchWithTimeout(STATUS_URL, timeoutMs, {
       cache: "no-store",
-      credentials: "include",
     });
     if (!response.ok) return { apps: new Map(), tailnetDeviceOnline: null };
 

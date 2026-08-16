@@ -11,7 +11,7 @@ The goal is not just to build features. The goal is to preserve a consistent pro
 
 ## Quick facts (so you don't have to open the docs above just to know these)
 
-- Stack: Bun + Turborepo, Astro (`apps/web`, `apps/dashboard`), Hono on Cloudflare Workers (`apps/api`), Biome (not ESLint), Vitest everywhere, Better Auth on Cloudflare D1. No Neon/Postgres/Drizzle, no mobile app — out of scope until there's an actual need.
+- Stack: Bun + Turborepo, Astro (`apps/web`, `apps/dashboard`), Hono on Cloudflare Workers (`apps/api`), Biome (not ESLint), Vitest everywhere. `apps/dashboard` is gated by Cloudflare Access, not app-level auth code. No Neon/Postgres/Drizzle, no mobile app — out of scope until there's an actual need.
 - No god-files, no circular dependencies. Run `bun run check-cycles` (madge) and `bun run knip` before considering a change done.
 - Shared logic belongs in a package (see architecture.md's package map) — never duplicate business logic between `apps/web` and `apps/dashboard`.
 

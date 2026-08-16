@@ -1,11 +1,11 @@
 # Architecture
 
-How the three apps and six packages fit together, and why things live where they do. For the visual/brand philosophy, see [constitution.md](./constitution.md). For technical conventions, see [engineering.md](./engineering.md). For deploying this, see [deployment.md](./deployment.md).
+How the three apps and five packages fit together, and why things live where they do. For the visual/brand philosophy, see [constitution.md](./constitution.md). For technical conventions, see [engineering.md](./engineering.md). For deploying this, see [deployment.md](./deployment.md).
 
 ## The three apps
 
 - **`apps/web`** — the public site, no-tone.com. Astro, server-rendered, its own Cloudflare Worker.
-- **`apps/dashboard`** — the self-hosted-services launcher, dashboard.no-tone.com. Astro, its own Cloudflare Worker.
+- **`apps/dashboard`** — the self-hosted-services launcher, dash.no-tone.com. Astro, its own Cloudflare Worker, gated behind a Cloudflare Access policy (not app-level auth code).
 - **`apps/api`** — api.no-tone.com. Hono, Cloudflare Workers, the single source of truth for anything both apps (or an external agent) might need.
 
 Both Astro apps are deliberately thin: they render markup and ship the client-side interaction (globe, panels, filters, theme toggle). Neither has its own API routes for data that isn't page-specific — that's what `apps/api` is for.
@@ -17,7 +17,10 @@ Before this monorepo existed, no-tone.com and main-menu were separate repos, eac
 - One cache/ETag-revalidation implementation for the GitHub repos proxy (`GET /projects`), not two.
 - One Tailscale-OAuth + app-health-probing implementation (`GET /status`), reusable by both `apps/web` (if it ever needs live status) and `apps/dashboard`.
 - One CSP-report ingestion endpoint (`POST /csp-report`), validated with Zod (`packages/validation`) instead of hand-parsed JSON.
-- One Better Auth instance (`packages/auth`, backed by Cloudflare D1), so a login system doesn't need to be built twice if `apps/dashboard` ever needs one.
+
+## Why `apps/dashboard` is gated by Cloudflare Access, not app code
+
+`apps/dashboard` sits entirely behind a Cloudflare Access application (an edge-level login wall tied to the account's identity providers) rather than any homegrown session/login system — there's exactly one internal-facing app that needs gating, so paying for a Hono/Astro auth stack (sessions, a login form, password storage) would be solving a problem Cloudflare's edge already solves for free. `packages/hono-middleware/src/cloudflare-access.ts` exports `requireCloudflareAccess()`, a small Hono middleware that verifies a Cloudflare Access JWT against the team's JWKS — it exists because `apps/api`'s `/status` route is reached cross-hostname via a server-to-server proxy (`apps/dashboard/src/pages/api/status.ts` forwards its own already-Access-verified request's JWT to `api.no-tone.com`), a hop Access's own edge gating doesn't cover since that gating is scoped to `dash.no-tone.com`, not `api.no-tone.com`.
 
 ## Why the security/CSP logic is a plain function, not just Hono middleware
 
@@ -34,8 +37,7 @@ Before this monorepo existed, no-tone.com and main-menu were separate repos, eac
 | `packages/ui` | `BaseHead.astro` (meta tags, theme bootstrap, OG/schema.org), design tokens + reset CSS | `apps/web`, `apps/dashboard` |
 | `packages/content` | Self-hosted app registry, GitHub-repo simplification, CSP-report summarizing, per-site info/markdown | `apps/api`, `apps/dashboard` |
 | `packages/validation` | Zod schemas, an RFC 7807 validation-failure hook for `@hono/zod-validator` | `apps/api` |
-| `packages/hono-middleware` | Composable Hono middleware + the framework-agnostic core both Astro apps call directly | `apps/api`, `apps/web`, `apps/dashboard` |
-| `packages/auth` | Better Auth setup (email/password) on Cloudflare D1, a `requireSession` middleware | `apps/api` |
+| `packages/hono-middleware` | Composable Hono middleware + the framework-agnostic core both Astro apps call directly, including `requireCloudflareAccess()` | `apps/api`, `apps/web`, `apps/dashboard` |
 | `packages/typescript-config` | Shared tsconfig presets (`base`, `astro`, `hono-jsx`) | every app/package |
 
 ## Rule of thumb for "does this go in a package?"

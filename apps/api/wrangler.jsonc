@@ -16,21 +16,7 @@
   },
   "upload_source_maps": true,
   "compatibility_flags": ["nodejs_compat"],
-  "routes": [{ "pattern": "api.no-tone.com", "custom_domain": true }],
-  "vars": {
-    "BETTER_AUTH_URL": "https://api.no-tone.com"
-  },
-  // Better Auth's storage (email/password sessions/users). Create with
-  // `wrangler d1 create tonil-auth`, paste the returned database_id below,
-  // then apply the Better Auth CLI's generated schema via
-  // `wrangler d1 migrations apply tonil-auth`.
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "tonil-auth",
-      "database_id": "c4c543e3-9687-4617-98af-d94e9367a5e7"
-    }
-  ]
+  "routes": [{ "pattern": "api.no-tone.com", "custom_domain": true }]
   /**
    * Smart Placement
    * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

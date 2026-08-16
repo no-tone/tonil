@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@hono/zod-validator": "catalog:",
-    "@repo/auth": "*",
     "@repo/content": "*",
     "@repo/hono-middleware": "*",
     "@repo/validation": "*",

@@ -65,12 +65,11 @@ Run from the repo root — Turborepo fans these out per app/package:
 |---|---|
 | `apps/web/` | The public site — globe nav, project/CV/about panels |
 | `apps/dashboard/` | The self-hosted-apps launcher + live status |
-| `apps/api/` | Hono API: `/projects`, `/status`, `/csp-report`, `/info/:slug`, `/auth/*` |
+| `apps/api/` | Hono API: `/projects`, `/status`, `/csp-report`, `/info/:slug` |
 | `packages/ui/` | `BaseHead.astro`, shared design tokens + reset CSS |
 | `packages/content/` | Self-hosted app registry, GitHub-repo simplification, per-site info/markdown |
 | `packages/validation/` | Zod schemas + an RFC 7807 validation-failure hook |
-| `packages/hono-middleware/` | Security headers/CSP, RFC 9727 catalog, markdown negotiation, RFC 7807 errors — as Hono middleware and as the framework-agnostic functions the Astro apps call directly |
-| `packages/auth/` | Better Auth (email/password) on Cloudflare D1 |
+| `packages/hono-middleware/` | Security headers/CSP, RFC 9727 catalog, markdown negotiation, RFC 7807 errors, Cloudflare Access JWT verification — as Hono middleware and as the framework-agnostic functions the Astro apps call directly |
 | `packages/typescript-config/` | Shared tsconfig presets |
 | `docs/` | Design philosophy, engineering standards, architecture notes, deployment runbook |
 
@@ -80,7 +79,7 @@ Run from the repo root — Turborepo fans these out per app/package:
 bun install
 ```
 
-Each app needs its own env file for local dev — see `apps/api/.dev.vars.example` and copy it to `.dev.vars`. Better Auth needs a D1 database: `wrangler d1 create tonil-auth`, then paste the returned `database_id` into `apps/api/wrangler.jsonc` and apply the Better Auth CLI's generated schema.
+Each app needs its own env file for local dev — see `apps/api/.dev.vars.example` and copy it to `.dev.vars`.
 
 ## Deploy
 
