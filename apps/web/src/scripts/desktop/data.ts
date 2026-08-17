@@ -526,24 +526,38 @@ export function mapApiReposToProjects(raw: unknown): Project[] {
     }));
 }
 
+let reposPromise: Promise<{ repos: Project[]; live: boolean }> | null = null;
+
 /* Fetch public repos via apps/api's cached endpoint; returns
-   {repos, live}. Falls back to the curated inventory. */
+   {repos, live}. Falls back to the curated inventory.
+
+   Both the About and Projects panels call this every time they open, so the
+   result is memoized for the page's lifetime — otherwise reopening either
+   panel (or opening both) re-hits the network on every single open, even
+   though the repo list doesn't change mid-session. A failed attempt clears
+   the cache instead of pinning the fallback forever, so a transient blip can
+   still succeed on the next panel open. */
 export async function fetchRepos(): Promise<{
   repos: Project[];
   live: boolean;
 }> {
-  try {
-    const res = await fetch(PROJECTS_API_URL, {
-      headers: { Accept: "application/json" },
-    });
-    if (!res.ok) throw new Error(`api ${res.status}`);
-    const raw: unknown = await res.json();
-    const repos = mapApiReposToProjects(raw);
-    if (!repos.length) throw new Error("no repos");
-    return { repos, live: true };
-  } catch {
-    return { repos: FALLBACK_PROJECTS, live: false };
-  }
+  if (reposPromise) return reposPromise;
+  reposPromise = (async () => {
+    try {
+      const res = await fetch(PROJECTS_API_URL, {
+        headers: { Accept: "application/json" },
+      });
+      if (!res.ok) throw new Error(`api ${res.status}`);
+      const raw: unknown = await res.json();
+      const repos = mapApiReposToProjects(raw);
+      if (!repos.length) throw new Error("no repos");
+      return { repos, live: true };
+    } catch {
+      reposPromise = null;
+      return { repos: FALLBACK_PROJECTS, live: false };
+    }
+  })();
+  return reposPromise;
 }
 
 /* Fetch a rendered README (HTML fragment). Returns null on failure. */

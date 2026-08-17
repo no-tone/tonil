@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { mapApiReposToProjects } from "../src/scripts/desktop/data";
 
 describe("mapApiReposToProjects", () => {
@@ -73,5 +73,56 @@ describe("mapApiReposToProjects", () => {
       },
     ]);
     expect(project.homepage).toBe("https://example.com");
+  });
+});
+
+describe("fetchRepos", () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    globalThis.fetch = originalFetch;
+  });
+
+  it("caches a successful fetch — a second call doesn't hit the network again", async () => {
+    vi.resetModules();
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify([{ name: "a", url: "https://github.com/no-tone/a" }]),
+          { status: 200 },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { fetchRepos } = await import("../src/scripts/desktop/data");
+
+    const first = await fetchRepos();
+    const second = await fetchRepos();
+
+    expect(first.live).toBe(true);
+    expect(second).toBe(first);
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("doesn't cache a failed fetch, so the next call retries", async () => {
+    vi.resetModules();
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("network down"))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([{ name: "a", url: "https://github.com/no-tone/a" }]),
+          { status: 200 },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const { fetchRepos } = await import("../src/scripts/desktop/data");
+
+    const first = await fetchRepos();
+    expect(first.live).toBe(false);
+
+    const second = await fetchRepos();
+    expect(second.live).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
