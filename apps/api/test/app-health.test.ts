@@ -1,5 +1,10 @@
+import type { SelfHostedApp } from "@repo/content";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { findTailnetDevice, probeAppHealth } from "../src/services/app-health";
+import {
+  findTailnetDevice,
+  probeAllApps,
+  probeAppHealth,
+} from "../src/services/app-health";
 
 describe("probeAppHealth", () => {
   const originalFetch = globalThis.fetch;
@@ -46,6 +51,42 @@ describe("probeAppHealth", () => {
     await probeAppHealth("https://pass.no-tone.com");
     const requestedUrl = new URL(String(fetchMock.mock.calls[0]?.[0]));
     expect(requestedUrl.pathname).toBe("/favicon.ico");
+  });
+});
+
+describe("probeAllApps", () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    globalThis.fetch = originalFetch;
+  });
+
+  const app = (name: string, tags: SelfHostedApp["tags"]): SelfHostedApp => ({
+    name,
+    href: `https://${name}.example.com`,
+    tags,
+    iconUrl: "",
+  });
+
+  it("reports 'unknown' for tailnet-only apps without probing them at all", async () => {
+    // Cloudflare's edge answers these with a 403 regardless of whether the
+    // box is alive, so a probe can only ever produce a false "up".
+    const fetchMock = vi.fn(async () => new Response(null, { status: 403 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const [result] = await probeAllApps([app("pass", ["Self-Hosted"])]);
+    expect(result?.status).toBe("unknown");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("still probes genuinely public apps", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 302 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const [result] = await probeAllApps([app("tailscale", ["Network"])]);
+    expect(result?.status).toBe("up");
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 });
 

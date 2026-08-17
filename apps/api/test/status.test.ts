@@ -59,7 +59,7 @@ describe("GET /status", () => {
     expect(res.status).toBe(401);
   });
 
-  it("reports every registered app as up when probes succeed, given a valid Access JWT", async () => {
+  it("probes public apps but reports tailnet-only ones as unknown, given a valid Access JWT", async () => {
     const now = Math.floor(Date.now() / 1000);
     const { token, jwks } = await generateSignedAccessToken({
       iss: ACCESS_ISSUER,
@@ -84,11 +84,20 @@ describe("GET /status", () => {
     });
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      apps: Array<{ status: string }>;
+      apps: Array<{ name: string; status: string }>;
       tailnet: { device: unknown };
     };
     expect(body.apps.length).toBeGreaterThan(0);
-    expect(body.apps.every((app) => app.status === "up")).toBe(true);
+    // Tailnet-only apps are deliberately not probed — Cloudflare's edge can't
+    // route to their CGNAT addresses, so any probe result would be fiction
+    // (see probeAllApps). Only genuinely public entries get a real verdict.
+    const tailscale = body.apps.find((app) => app.name === "Tailscale");
+    expect(tailscale?.status).toBe("up");
+    expect(
+      body.apps
+        .filter((app) => app.name !== "Tailscale")
+        .every((app) => app.status === "unknown"),
+    ).toBe(true);
     // No TAILSCALE_* vars are configured in the test environment, so the
     // tailnet lookup should short-circuit to null without an extra fetch.
     expect(body.tailnet.device).toBeNull();
