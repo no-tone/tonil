@@ -73,11 +73,43 @@ describe("GET /projects/:name/readme", () => {
     globalThis.fetch = originalFetch;
   });
 
-  it("returns the rendered README html for a repo", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response("<h1>hi</h1>", { status: 200 })),
-    );
+  /**
+   * Stubs GitHub for both the repo list and the readme, then force-refreshes
+   * the cached repo list so the known-repo check has data regardless of what
+   * other tests left in the shared edge cache.
+   */
+  async function stubGitHubAndPrime(
+    readme: () => Response,
+    repos: unknown[] = GITHUB_REPOS,
+  ) {
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.endsWith("/readme")) return readme();
+      return new Response(JSON.stringify(repos), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await SELF.fetch("https://api.no-tone.com/projects", {
+      headers: { "x-tonil-revalidate": "1" },
+    });
+    fetchMock.mockClear();
+    return fetchMock;
+  }
+
+  const okReadme = () => new Response("<h1>hi</h1>", { status: 200 });
+
+  /** A repo the edge cache hasn't seen a README for yet, so each test's
+   *  upstream behaviour is what's actually being asserted. */
+  const repo = (name: string) => [
+    {
+      name,
+      html_url: `https://github.com/no-tone/${name}`,
+      stargazers_count: 0,
+      updated_at: "2026-01-01T00:00:00Z",
+    },
+  ];
+
+  it("returns the rendered README html for a known repo", async () => {
+    await stubGitHubAndPrime(okReadme);
     const res = await SELF.fetch(
       "https://api.no-tone.com/projects/tonil/readme",
     );
@@ -86,33 +118,46 @@ describe("GET /projects/:name/readme", () => {
   });
 
   it("proxies to GitHub's readme endpoint for that repo", async () => {
-    const fetchMock = vi.fn(
-      async (_input: string | URL | Request) =>
-        new Response("<h1>hi</h1>", { status: 200 }),
-    );
-    vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = await stubGitHubAndPrime(okReadme);
     await SELF.fetch("https://api.no-tone.com/projects/tonil/readme");
 
-    const url = String(fetchMock.mock.calls[0]?.[0]);
-    expect(url).toBe("https://api.github.com/repos/no-tone/tonil/readme");
+    const urls = fetchMock.mock.calls.map((call) => String(call[0]));
+    expect(urls).toContain("https://api.github.com/repos/no-tone/tonil/readme");
   });
 
-  it("returns html:null (not an error) when the repo has no README", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response("", { status: 404 })),
+  it("never calls GitHub for a repo that isn't in the projects list", async () => {
+    // Otherwise every made-up name is an uncacheable upstream request, and a
+    // loop of them drains the token's hourly budget.
+    const fetchMock = await stubGitHubAndPrime(okReadme);
+
+    const res = await SELF.fetch(
+      "https://api.no-tone.com/projects/not-a-real-repo/readme",
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ html: null });
+
+    const readmeCalls = fetchMock.mock.calls.filter((call) =>
+      String(call[0]).endsWith("/readme"),
+    );
+    expect(readmeCalls).toHaveLength(0);
+  });
+
+  it("returns html:null (not an error) when a known repo has no README", async () => {
+    await stubGitHubAndPrime(
+      () => new Response("", { status: 404 }),
+      repo("bare-repo"),
     );
     const res = await SELF.fetch(
-      "https://api.no-tone.com/projects/bare/readme",
+      "https://api.no-tone.com/projects/bare-repo/readme",
     );
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ html: null });
   });
 
   it("returns html:null when GitHub errors and nothing is cached", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response("", { status: 504 })),
+    await stubGitHubAndPrime(
+      () => new Response("", { status: 504 }),
+      repo("flaky-repo"),
     );
     const res = await SELF.fetch(
       "https://api.no-tone.com/projects/flaky-repo/readme",
@@ -122,15 +167,45 @@ describe("GET /projects/:name/readme", () => {
   });
 
   it("rejects a repo name that isn't a valid GitHub repo name", async () => {
-    const fetchMock = vi.fn(
-      async (_input: string | URL | Request) =>
-        new Response("<h1>hi</h1>", { status: 200 }),
-    );
-    vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = await stubGitHubAndPrime(okReadme);
     const res = await SELF.fetch(
       "https://api.no-tone.com/projects/..%2F..%2Fetc/readme",
     );
     expect(res.status).toBe(400);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("API basics", () => {
+  it("renders a 404 as application/problem+json, like every other error", async () => {
+    const res = await SELF.fetch("https://api.no-tone.com/does-not-exist");
+    expect(res.status).toBe(404);
+    expect(res.headers.get("Content-Type")).toBe(
+      "application/problem+json; charset=utf-8",
+    );
+    expect(await res.json()).toMatchObject({
+      status: 404,
+      title: "Not Found",
+      instance: "/does-not-exist",
+    });
+  });
+
+  it("describes itself at the root instead of 404ing", async () => {
+    const res = await SELF.fetch("https://api.no-tone.com/");
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { endpoints: Array<{ href: string }> };
+    expect(body.endpoints.length).toBeGreaterThan(0);
+  });
+
+  it("only advertises methods that actually exist on preflight", async () => {
+    const res = await SELF.fetch("https://api.no-tone.com/projects", {
+      method: "OPTIONS",
+      headers: {
+        Origin: "https://no-tone.com",
+        "Access-Control-Request-Method": "GET",
+      },
+    });
+    const allowed = res.headers.get("Access-Control-Allow-Methods") ?? "";
+    expect(allowed).not.toMatch(/DELETE|PATCH|PUT/);
   });
 });

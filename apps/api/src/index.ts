@@ -1,6 +1,8 @@
 import {
   apiCatalog,
+  problemDetails,
   problemJson,
+  problemResponse,
   securityHeaders,
 } from "@repo/hono-middleware";
 import { Hono } from "hono";
@@ -28,6 +30,18 @@ const app = new Hono<AppEnv>();
 
 app.onError(problemJson());
 
+// onError only fires for *thrown* errors — an unmatched route goes to Hono's
+// default handler, which returns plain text. Without this, a 404 was the one
+// response that broke the API's own RFC 7807 contract.
+app.notFound((c) =>
+  problemResponse(
+    c,
+    problemDetails(404, "Not Found", {
+      instance: new URL(c.req.url).pathname,
+    }),
+  ),
+);
+
 app.use(
   "*",
   cors({
@@ -37,6 +51,9 @@ app.use(
       }
       return null;
     },
+    // Preflight otherwise advertises PUT/DELETE/PATCH, none of which exist
+    // here — POST is only for /csp-report.
+    allowMethods: ["GET", "HEAD", "POST", "OPTIONS"],
   }),
 );
 
@@ -53,15 +70,37 @@ app.use(
   }),
 );
 
-app.use(
-  "*",
-  apiCatalog({
-    entries: [
-      { href: `${API_ORIGIN}/projects` },
-      { href: `${API_ORIGIN}/status` },
-      { href: `${API_ORIGIN}/csp-report` },
-    ],
-  }),
+const ENDPOINTS = [
+  { href: `${API_ORIGIN}/projects`, description: "Public GitHub repo list." },
+  {
+    href: `${API_ORIGIN}/projects/{repo}/readme`,
+    description: "Rendered README for one repo.",
+  },
+  {
+    href: `${API_ORIGIN}/status`,
+    description: "Self-hosted app health. Requires a Cloudflare Access JWT.",
+  },
+  { href: `${API_ORIGIN}/csp-report`, description: "CSP violation sink." },
+  {
+    href: `${API_ORIGIN}/info/{slug}`,
+    description: "Site info as HTML, or markdown via Accept: text/markdown.",
+  },
+];
+
+app.use("*", apiCatalog({ entries: ENDPOINTS.map(({ href }) => ({ href })) }));
+
+// A bare GET / used to 404. Cheaper to point a human (or agent) at what's
+// here than to make them guess or find the RFC 9727 catalog first.
+app.get("/", (c) =>
+  c.json(
+    {
+      name: "tonil api",
+      catalog: "/.well-known/api-catalog",
+      endpoints: ENDPOINTS,
+    },
+    200,
+    { "Cache-Control": "public, max-age=3600" },
+  ),
 );
 
 app.route("/projects", projectsRoute);

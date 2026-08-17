@@ -1,7 +1,9 @@
 import { zValidator } from "@hono/zod-validator";
 import { summarizeCspReport } from "@repo/content";
+import { problemDetails, problemResponse } from "@repo/hono-middleware";
 import { cspReportBodySchema, validationProblemHook } from "@repo/validation";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import type { AppEnv } from "../env";
 
 const noCacheHeaders = {
@@ -10,10 +12,25 @@ const noCacheHeaders = {
   "X-Content-Type-Options": "nosniff",
 };
 
+// This is a public, unauthenticated POST — the only one on the API. Real CSP
+// reports are a couple of KB at most, so cap the body well below that rather
+// than letting anyone stream arbitrary bytes into the Worker.
+const MAX_BODY_BYTES = 16 * 1024;
+
 export const cspReportRoute = new Hono<AppEnv>();
 
 cspReportRoute.post(
   "/",
+  bodyLimit({
+    maxSize: MAX_BODY_BYTES,
+    onError: (c) =>
+      problemResponse(
+        c,
+        problemDetails(413, "Payload Too Large", {
+          instance: new URL(c.req.url).pathname,
+        }),
+      ),
+  }),
   zValidator("json", cspReportBodySchema, validationProblemHook),
   (c) => {
     const body = c.req.valid("json");

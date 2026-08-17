@@ -53,13 +53,13 @@ projectsRoute.get("/:name/readme", async (c) => {
     throw new HTTPException(400, { message: "Invalid repository name" });
   }
 
-  const { html, cacheState } = await fetchReadmeHtml(name, {
+  const { html, etag, cacheState } = await fetchReadmeHtml(name, {
     githubToken: c.env.GITHUB_TOKEN,
     onUpstreamError: (details) =>
       console.warn("[readme-api] upstream_failed", { name, ...details }),
   });
 
-  return c.json({ html }, 200, {
+  const headers: Record<string, string> = {
     "Cache-Control":
       html === null
         ? "no-store"
@@ -67,7 +67,13 @@ projectsRoute.get("/:name/readme", async (c) => {
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "no-referrer",
     "X-Tonil-Cache": cacheState,
-  });
+  };
+  if (etag) headers.ETag = etag;
+
+  if (etag && c.req.header("If-None-Match") === etag) {
+    return c.body(null, 304, headers);
+  }
+  return c.json({ html }, 200, headers);
 });
 
 function respond(
@@ -92,5 +98,11 @@ function respond(
   }
   const headers = buildHeaders(extra);
   if (snapshot.etag) headers.ETag = snapshot.etag;
+  // The ETag was previously only used to revalidate against GitHub, never
+  // offered back to callers — so a client that already had the payload
+  // re-downloaded it on every poll.
+  if (snapshot.etag && c.req.header("If-None-Match") === snapshot.etag) {
+    return c.body(null, 304, headers);
+  }
   return c.body(snapshot.body, 200, headers);
 }

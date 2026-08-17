@@ -12,8 +12,10 @@ describe("app-wide middleware", () => {
     const body = (await res.json()) as { linkset: { anchor: string }[] };
     expect(body.linkset.map((entry) => entry.anchor)).toEqual([
       "https://api.no-tone.com/projects",
+      "https://api.no-tone.com/projects/{repo}/readme",
       "https://api.no-tone.com/status",
       "https://api.no-tone.com/csp-report",
+      "https://api.no-tone.com/info/{slug}",
     ]);
   });
 
@@ -24,12 +26,12 @@ describe("app-wide middleware", () => {
     expect(res.headers.get("X-Frame-Options")).toBe("SAMEORIGIN");
   });
 
-  it("renders unknown routes' 404s as application/problem+json via onError", async () => {
-    // Hono's built-in notFound() (used by c.notFound()) isn't routed through
-    // onError, so this exercises the default 404 rather than problemJson —
-    // asserting it still carries the shared security headers.
+  it("renders unknown routes' 404s as application/problem+json, with the shared security headers", async () => {
     const res = await SELF.fetch("https://api.no-tone.com/nope");
     expect(res.status).toBe(404);
+    expect(res.headers.get("Content-Type")).toBe(
+      "application/problem+json; charset=utf-8",
+    );
     expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
   });
 });

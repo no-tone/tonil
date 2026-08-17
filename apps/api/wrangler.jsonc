@@ -16,6 +16,8 @@
   },
   "upload_source_maps": true,
   "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
   "routes": [{ "pattern": "api.no-tone.com", "custom_domain": true }]
   /**
    * Smart Placement

@@ -7,8 +7,12 @@ import { fetchReadme, fetchRepos, type Lang, type Project, tt } from "../data";
 type SortId = "recent" | "name" | "stars";
 
 const GH_USER = "no-tone";
-const isAbsoluteUrl = (u: string) =>
-  /^(?:https?:|mailto:|data:|#|\/\/)/i.test(u);
+// Inline data: images are legitimate in a README; a data: *link* isn't, and
+// leaving it through would hand a reader a one-click navigation to attacker
+// markup. Anything not matched here gets rewritten onto a github.com base
+// below, which neutralises it.
+const isAbsoluteImgUrl = (u: string) => /^(?:https?:|data:|#|\/\/)/i.test(u);
+const isAbsoluteHref = (u: string) => /^(?:https?:|mailto:|#|\/\/)/i.test(u);
 
 function sanitizeReadme(html: string, repo: string): DocumentFragment {
   const cleaned = html
@@ -42,11 +46,12 @@ function sanitizeReadme(html: string, repo: string): DocumentFragment {
   const rel = (u: string) => u.replace(/^\.?\//, "");
   frag.querySelectorAll("img[src]").forEach((el) => {
     const src = el.getAttribute("src") || "";
-    if (src && !isAbsoluteUrl(src)) el.setAttribute("src", rawBase + rel(src));
+    if (src && !isAbsoluteImgUrl(src))
+      el.setAttribute("src", rawBase + rel(src));
   });
   frag.querySelectorAll("a[href]").forEach((el) => {
     const href = el.getAttribute("href") || "";
-    if (href && !isAbsoluteUrl(href))
+    if (href && !isAbsoluteHref(href))
       el.setAttribute("href", blobBase + rel(href));
   });
   return frag;

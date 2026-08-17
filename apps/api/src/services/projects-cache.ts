@@ -1,9 +1,17 @@
-import { latestUpdateTimestamp, simplifyRepos } from "@repo/content";
+import {
+  fetchWithTimeout,
+  latestUpdateTimestamp,
+  simplifyRepos,
+} from "@repo/content";
 
 const GITHUB_API_URL =
   "https://api.github.com/users/no-tone/repos?per_page=100&sort=updated";
 const CACHE_KEY_URL = "https://projects-api.tonil.internal/cache-v1";
 const EDGE_TTL_SECONDS = 900;
+// GitHub has been observed taking 10s+ and returning 504s; without a bound
+// that latency passes straight through to the caller. On timeout we fall
+// through to the stale/memory snapshot below, which is the better answer.
+const UPSTREAM_TIMEOUT_MS = 8000;
 const CACHED_AT_HEADER = "x-tonil-cached-at";
 const LAST_UPDATED_HEADER = "x-tonil-last-updated";
 
@@ -102,18 +110,22 @@ export async function fetchProjects(
 
   const upstreamStartedAt = Date.now();
   try {
-    const upstream = await fetch(GITHUB_API_URL, {
-      headers: {
-        "User-Agent": "tonil-api",
-        Accept: "application/vnd.github.mercy-preview+json",
-        ...(options.githubToken
-          ? { Authorization: `Bearer ${options.githubToken}` }
-          : {}),
-        ...(cachedSnapshot?.etag
-          ? { "If-None-Match": cachedSnapshot.etag }
-          : {}),
+    const upstream = await fetchWithTimeout(
+      GITHUB_API_URL,
+      UPSTREAM_TIMEOUT_MS,
+      {
+        headers: {
+          "User-Agent": "tonil-api",
+          Accept: "application/vnd.github.mercy-preview+json",
+          ...(options.githubToken
+            ? { Authorization: `Bearer ${options.githubToken}` }
+            : {}),
+          ...(cachedSnapshot?.etag
+            ? { "If-None-Match": cachedSnapshot.etag }
+            : {}),
+        },
       },
-    });
+    );
 
     if (upstream.status === 304 && cachedSnapshot) {
       if (cache)
