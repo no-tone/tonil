@@ -562,17 +562,31 @@ export async function fetchRepos(): Promise<{
 
 const readmeCache = new Map<string, Promise<string | null>>();
 
+/* Fetch a rendered README (HTML fragment). Returns null on failure, or when
+   the repo genuinely has no README.
+
+   Goes through apps/api rather than api.github.com directly: that endpoint
+   holds the GITHUB_TOKEN and caches at the edge, so visitors no longer spend
+   GitHub's 60-per-hour unauthenticated per-IP budget, and a GitHub outage no
+   longer surfaces here as an opaque CORS error (GitHub drops CORS headers on
+   its own 5xx responses).
+
+   Memoized per repo name: reselecting a repo, or closing and reopening the
+   Projects panel, reuses the cached result instead of refetching. A failed
+   attempt isn't cached so a transient blip can retry, but a successful
+   "this repo has no README" is. */
 export async function fetchReadme(name: string): Promise<string | null> {
   const cached = readmeCache.get(name);
   if (cached) return cached;
   const promise = (async () => {
     try {
       const res = await fetch(
-        `https://api.github.com/repos/${GH_USER}/${encodeURIComponent(name)}/readme`,
-        { headers: { Accept: "application/vnd.github.html+json" } },
+        `${PROJECTS_API_URL}/${encodeURIComponent(name)}/readme`,
+        { headers: { Accept: "application/json" } },
       );
-      if (!res.ok) throw new Error(`gh ${res.status}`);
-      return await res.text();
+      if (!res.ok) throw new Error(`api ${res.status}`);
+      const data = (await res.json()) as { html?: string | null };
+      return data.html ?? null;
     } catch {
       readmeCache.delete(name);
       return null;

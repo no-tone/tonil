@@ -1,10 +1,12 @@
 import { type Context, Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import type { AppEnv } from "../env";
 import {
   fetchProjects,
   type ProjectsCacheState,
   type ProjectsSnapshot,
 } from "../services/projects-cache";
+import { fetchReadmeHtml, isValidRepoName } from "../services/readme-cache";
 
 const BROWSER_TTL_SECONDS = 300;
 const EDGE_TTL_SECONDS = 900;
@@ -39,6 +41,33 @@ projectsRoute.get("/", async (c) => {
   });
 
   return respond(c, snapshot, cacheState);
+});
+
+// Rendered README for a single repo, consumed by apps/web's projects panel.
+// Returns { html: null } rather than a 404 when a repo simply has no README —
+// "we looked, there isn't one" is a successful answer here, same as /projects
+// returning [], and it keeps the visitor's console clean.
+projectsRoute.get("/:name/readme", async (c) => {
+  const name = c.req.param("name");
+  if (!isValidRepoName(name)) {
+    throw new HTTPException(400, { message: "Invalid repository name" });
+  }
+
+  const { html, cacheState } = await fetchReadmeHtml(name, {
+    githubToken: c.env.GITHUB_TOKEN,
+    onUpstreamError: (details) =>
+      console.warn("[readme-api] upstream_failed", { name, ...details }),
+  });
+
+  return c.json({ html }, 200, {
+    "Cache-Control":
+      html === null
+        ? "no-store"
+        : `public, max-age=${BROWSER_TTL_SECONDS}, s-maxage=${EDGE_TTL_SECONDS}`,
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+    "X-Tonil-Cache": cacheState,
+  });
 });
 
 function respond(

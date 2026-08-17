@@ -135,11 +135,24 @@ describe("fetchReadme", () => {
     globalThis.fetch = originalFetch;
   });
 
+  const readmeResponse = () =>
+    new Response(JSON.stringify({ html: "<p>readme</p>" }), { status: 200 });
+
+  it("requests it from apps/api, not api.github.com", async () => {
+    vi.resetModules();
+    const fetchMock = vi.fn(async () => readmeResponse());
+    vi.stubGlobal("fetch", fetchMock);
+    const { fetchReadme } = await import("../src/scripts/desktop/data");
+
+    await fetchReadme("pyrowatch");
+
+    const url = String(fetchMock.mock.calls[0]?.[0]);
+    expect(url).toBe("https://api.no-tone.com/projects/pyrowatch/readme");
+  });
+
   it("caches a successful fetch per repo name — repeated calls for the same repo don't refetch", async () => {
     vi.resetModules();
-    const fetchMock = vi.fn(
-      async () => new Response("<p>readme</p>", { status: 200 }),
-    );
+    const fetchMock = vi.fn(async () => readmeResponse());
     vi.stubGlobal("fetch", fetchMock);
     const { fetchReadme } = await import("../src/scripts/desktop/data");
 
@@ -153,9 +166,7 @@ describe("fetchReadme", () => {
 
   it("fetches independently per repo name", async () => {
     vi.resetModules();
-    const fetchMock = vi.fn(
-      async () => new Response("<p>readme</p>", { status: 200 }),
-    );
+    const fetchMock = vi.fn(async () => readmeResponse());
     vi.stubGlobal("fetch", fetchMock);
     const { fetchReadme } = await import("../src/scripts/desktop/data");
 
@@ -165,12 +176,25 @@ describe("fetchReadme", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it("returns null when the repo has no README, and caches that answer", async () => {
+    vi.resetModules();
+    const fetchMock = vi.fn(
+      async () => new Response(JSON.stringify({ html: null }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { fetchReadme } = await import("../src/scripts/desktop/data");
+
+    expect(await fetchReadme("bare")).toBeNull();
+    expect(await fetchReadme("bare")).toBeNull();
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
   it("doesn't cache a failed fetch, so the next call for the same repo retries", async () => {
     vi.resetModules();
     const fetchMock = vi
       .fn()
       .mockRejectedValueOnce(new Error("network down"))
-      .mockResolvedValueOnce(new Response("<p>readme</p>", { status: 200 }));
+      .mockResolvedValueOnce(readmeResponse());
     vi.stubGlobal("fetch", fetchMock);
     const { fetchReadme } = await import("../src/scripts/desktop/data");
 

@@ -30,10 +30,11 @@ const LINKS = [
 
 const security = createAstroSecurityMiddleware({
   devHostnames: ["localhost", "127.0.0.1"],
-  // api.github.com: unused directly by this app today, kept for parity with
-  // no-tone.com's original middleware. api.no-tone.com: fetchRepos() in
-  // scripts/desktop/data.ts fetches /projects client-side, cross-origin.
-  connectSrc: ["https://api.github.com", API_ORIGIN],
+  // api.no-tone.com only: scripts/desktop/data.ts fetches both /projects and
+  // per-repo READMEs from there client-side, cross-origin. api.github.com used
+  // to be listed for the README fetch, which now goes through apps/api instead
+  // (see fetchReadme) — nothing in this app talks to GitHub directly anymore.
+  connectSrc: [API_ORIGIN],
   reportPath: CSP_REPORT_URL,
   links: LINKS,
 });

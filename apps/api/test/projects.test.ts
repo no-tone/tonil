@@ -64,3 +64,73 @@ describe("GET /projects", () => {
     );
   });
 });
+
+describe("GET /projects/:name/readme", () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    globalThis.fetch = originalFetch;
+  });
+
+  it("returns the rendered README html for a repo", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("<h1>hi</h1>", { status: 200 })),
+    );
+    const res = await SELF.fetch(
+      "https://api.no-tone.com/projects/tonil/readme",
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ html: "<h1>hi</h1>" });
+  });
+
+  it("proxies to GitHub's readme endpoint for that repo", async () => {
+    const fetchMock = vi.fn(
+      async (_input: string | URL | Request) =>
+        new Response("<h1>hi</h1>", { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await SELF.fetch("https://api.no-tone.com/projects/tonil/readme");
+
+    const url = String(fetchMock.mock.calls[0]?.[0]);
+    expect(url).toBe("https://api.github.com/repos/no-tone/tonil/readme");
+  });
+
+  it("returns html:null (not an error) when the repo has no README", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("", { status: 404 })),
+    );
+    const res = await SELF.fetch(
+      "https://api.no-tone.com/projects/bare/readme",
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ html: null });
+  });
+
+  it("returns html:null when GitHub errors and nothing is cached", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("", { status: 504 })),
+    );
+    const res = await SELF.fetch(
+      "https://api.no-tone.com/projects/flaky-repo/readme",
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ html: null });
+  });
+
+  it("rejects a repo name that isn't a valid GitHub repo name", async () => {
+    const fetchMock = vi.fn(
+      async (_input: string | URL | Request) =>
+        new Response("<h1>hi</h1>", { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const res = await SELF.fetch(
+      "https://api.no-tone.com/projects/..%2F..%2Fetc/readme",
+    );
+    expect(res.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
