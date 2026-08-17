@@ -126,3 +126,59 @@ describe("fetchRepos", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("fetchReadme", () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    globalThis.fetch = originalFetch;
+  });
+
+  it("caches a successful fetch per repo name — repeated calls for the same repo don't refetch", async () => {
+    vi.resetModules();
+    const fetchMock = vi.fn(
+      async () => new Response("<p>readme</p>", { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { fetchReadme } = await import("../src/scripts/desktop/data");
+
+    const first = await fetchReadme("pyrowatch");
+    const second = await fetchReadme("pyrowatch");
+
+    expect(first).toBe("<p>readme</p>");
+    expect(second).toBe(first);
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("fetches independently per repo name", async () => {
+    vi.resetModules();
+    const fetchMock = vi.fn(
+      async () => new Response("<p>readme</p>", { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const { fetchReadme } = await import("../src/scripts/desktop/data");
+
+    await fetchReadme("a");
+    await fetchReadme("b");
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("doesn't cache a failed fetch, so the next call for the same repo retries", async () => {
+    vi.resetModules();
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("network down"))
+      .mockResolvedValueOnce(new Response("<p>readme</p>", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { fetchReadme } = await import("../src/scripts/desktop/data");
+
+    const first = await fetchReadme("pyrowatch");
+    expect(first).toBeNull();
+
+    const second = await fetchReadme("pyrowatch");
+    expect(second).toBe("<p>readme</p>");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});

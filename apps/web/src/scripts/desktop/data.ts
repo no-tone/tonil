@@ -560,16 +560,24 @@ export async function fetchRepos(): Promise<{
   return reposPromise;
 }
 
-/* Fetch a rendered README (HTML fragment). Returns null on failure. */
+const readmeCache = new Map<string, Promise<string | null>>();
+
 export async function fetchReadme(name: string): Promise<string | null> {
-  try {
-    const res = await fetch(
-      `https://api.github.com/repos/${GH_USER}/${encodeURIComponent(name)}/readme`,
-      { headers: { Accept: "application/vnd.github.html+json" } },
-    );
-    if (!res.ok) throw new Error(`gh ${res.status}`);
-    return await res.text();
-  } catch {
-    return null;
-  }
+  const cached = readmeCache.get(name);
+  if (cached) return cached;
+  const promise = (async () => {
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${GH_USER}/${encodeURIComponent(name)}/readme`,
+        { headers: { Accept: "application/vnd.github.html+json" } },
+      );
+      if (!res.ok) throw new Error(`gh ${res.status}`);
+      return await res.text();
+    } catch {
+      readmeCache.delete(name);
+      return null;
+    }
+  })();
+  readmeCache.set(name, promise);
+  return promise;
 }
