@@ -40,6 +40,16 @@ export interface BuildSecurityHeadersOptions {
   links?: string[];
   /** @default "same-origin" - apps/api sets "cross-origin" since it's deliberately consumed by multiple frontend origins. */
   crossOriginResourcePolicy?: string;
+  /**
+   * Enforce Trusted Types (production only).
+   *
+   * **Off, and it cannot be turned on while Cloudflare injects into the
+   * HTML.** See the comment at the directive below - this is a zone-settings
+   * dependency, not a code one.
+   *
+   * @default false
+   */
+  trustedTypes?: boolean;
 }
 
 export interface BuiltSecurityHeaders {
@@ -114,6 +124,8 @@ export function buildSecurityHeaders(
   ];
   if (!isLocalDev) {
     directives.push("upgrade-insecure-requests");
+  }
+  if (!isLocalDev && options.trustedTypes) {
     /* Trusted Types: a ratchet, not a repair.
      *
      * `require-trusted-types-for 'script'` makes the DOM's injection sinks -
@@ -140,13 +152,43 @@ export function buildSecurityHeaders(
      *
      * Production only. Astro's dev server builds its HMR client and error
      * overlay out of innerHTML, so enforcing this under `astro dev` would
-     * break the dev server rather than the site. `wrangler dev` serves the
-     * production policy (it resolves the request URL from the configured
-     * route, not the listening host), which is where this gets tested.
+     * break the dev server rather than the site.
      *
      * Ignored entirely by browsers without Trusted Types, which is most of
      * them outside Chromium. That is the nature of a defence-in-depth header:
-     * it costs nothing where it does not apply. */
+     * it costs nothing where it does not apply.
+     *
+     * ---
+     *
+     * ⚠️ OFF BY DEFAULT, AND THE BLOCKER IS NOT IN THIS REPOSITORY.
+     *
+     * Cloudflare's JavaScript Detections injects a bootstrap script into the
+     * HTML *after* the Worker has run, and that script does:
+     *
+     *     var d = b.createElement('script');
+     *     d.nonce = '<our nonce>';
+     *     d.innerHTML = "window.__CF$cv$params={…}";
+     *
+     * Note the second line. The injector reads the CSP off the response and
+     * reuses the nonce, so `script-src 'self' 'nonce-…'` admits it - by
+     * design. What it cannot do is produce a TrustedHTML, so the third line
+     * throws under this directive and the detection script dies on every page
+     * load, with a TypeError in the console for every visitor.
+     *
+     * There is no fix on this side worth having. A `createHTML` that passes
+     * strings through would defeat the whole point, and one that allowlists
+     * Cloudflare's current payload would be blessing a third-party script
+     * body we do not control and cannot pin.
+     *
+     * It is also not a one-off: an edge that reserves the right to inject
+     * markup is structurally incompatible with Trusted Types, and Speed Brain
+     * and Web Analytics inject too.
+     *
+     * To turn this on, first turn those off in the Cloudflare dashboard -
+     * Security → Bots → JavaScript Detections, and Speed → Optimization →
+     * Speed Brain - then pass `trustedTypes: true`. See docs/deployment.md.
+     * Nothing local can verify it: `wrangler dev` does not run the edge
+     * injectors, which is exactly how this shipped once already. */
     directives.push("require-trusted-types-for 'script'");
     directives.push("trusted-types default");
   }

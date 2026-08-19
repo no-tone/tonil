@@ -24,27 +24,44 @@ describe("buildSecurityHeaders", () => {
     expect(headers["Strict-Transport-Security"]).toBeUndefined();
   });
 
-  it("requires Trusted Types in production, allowing exactly one policy", () => {
+  it("does not enforce Trusted Types unless asked", () => {
+    /* The default matters more than the option does. Enforcing it broke
+       production: Cloudflare's JavaScript Detections injects a script into
+       the HTML after the Worker runs, reuses our nonce so script-src admits
+       it, and then assigns to innerHTML - which a Trusted Types policy
+       cannot allow without ceasing to be one. Nothing local reproduces that;
+       `wrangler dev` does not run the edge injectors. So the safe value is
+       the one you get by not thinking about it. */
     const { csp } = buildSecurityHeaders({
       url: new URL("https://no-tone.com/"),
       nonce: "abc123",
     });
+    expect(csp).not.toContain("require-trusted-types-for");
+    expect(csp).not.toContain("trusted-types");
+  });
+
+  it("enforces Trusted Types when asked, allowing exactly one policy", () => {
+    const { csp } = buildSecurityHeaders({
+      url: new URL("https://no-tone.com/"),
+      nonce: "abc123",
+      trustedTypes: true,
+    });
     expect(csp).toContain("require-trusted-types-for 'script'");
     // The name has to match the createPolicy call in @repo/ui's
-    // trusted-types.ts. A mismatch throws there and the gradient never
-    // starts - in production only, since dev does not send the directive.
+    // trusted-types.ts. A mismatch throws there and the gradient never starts.
     expect(csp).toContain("trusted-types default");
     // Exactly one, and no `'allow-duplicates'`: a second policy could be
     // created to launder arbitrary strings past the first.
     expect(csp).not.toMatch(/trusted-types [^;]*\s\S+/);
   });
 
-  it("does not require Trusted Types in dev, which would break HMR", () => {
+  it("never enforces Trusted Types in dev, even when asked, which would break HMR", () => {
     // Astro's dev client and error overlay are built with innerHTML. The
     // directive would reject the dev server, not the site.
     const { csp } = buildSecurityHeaders({
       url: new URL("http://localhost:4321/"),
       nonce: "abc123",
+      trustedTypes: true,
     });
     expect(csp).not.toContain("require-trusted-types-for");
     expect(csp).not.toContain("trusted-types");

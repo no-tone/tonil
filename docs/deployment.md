@@ -96,6 +96,45 @@ genuine `<link rel="prefetch">` or a `speculationrules` block would reach the
 Worker and actually work, which is worth having now that navigation is a real
 page load. Until then, do not add one - it will 503.
 
+### JavaScript Detections: off, if you want Trusted Types
+
+**Security → Bots → JavaScript Detections.**
+
+Cloudflare injects a bootstrap script into every HTML response, *after* the
+Worker has run:
+
+```js
+var d = b.createElement('script');
+d.nonce = '<the nonce off your own CSP>';
+d.innerHTML = "window.__CF$cv$params={…}";
+```
+
+Two things are worth noticing. It reads the nonce off the response and reuses
+it, so a strict `script-src 'self' 'nonce-…'` admits it - that is deliberate
+on Cloudflare's part and it means the nonce is not the boundary you might
+assume. And it assigns to `innerHTML`, which no Trusted Types policy can
+permit without ceasing to be one.
+
+So `require-trusted-types-for 'script'` and this feature cannot both be on.
+Enforcing it threw a `TypeError` on every page load in production while
+looking perfectly clean locally - `wrangler dev` does not run the edge
+injectors, so nothing in this repository can catch it.
+
+The switch is `trustedTypes: true` in `buildSecurityHeaders`
+(`packages/hono-middleware/src/core.ts`), off by default. Before flipping it,
+turn off JavaScript Detections **and** Speed Brain, then check the deployed
+HTML for injected `<script>` tags:
+
+```console
+$ curl -s https://no-tone.com/ | grep -c '__CF\$cv\$params'
+0
+```
+
+The site itself has no HTML sinks at all - no `innerHTML`, `outerHTML`,
+`insertAdjacentHTML`, `document.write` or `eval` anywhere in the client code -
+so the policy costs nothing to satisfy. The only thing standing in the way is
+the edge.
+
 ### HTML is deliberately uncacheable
 
 Every HTML response carries `Cache-Control: private, max-age=0,
