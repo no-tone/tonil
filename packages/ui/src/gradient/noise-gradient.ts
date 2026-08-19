@@ -16,6 +16,7 @@
    Trying to do both in the canvas gets you a blurry grain; trying to do
    both in CSS gets you a gradient that bands. */
 
+import { installDefaultTrustedTypesPolicy } from "../trusted-types.js";
 import type { FieldState, HostToWorker, WorkerToHost } from "./field.js";
 import { renderGrainTile } from "./field.js";
 import { RAMPS, type Ramp, type RampId, serializeRamp } from "./ramps.js";
@@ -184,6 +185,15 @@ export function mountNoiseGradient(
   host.appendChild(grain);
 
   const context = canvas.getContext("2d");
+  // Before the Worker, which is a Trusted Types sink under the production CSP.
+  installDefaultTrustedTypesPolicy();
+  /* The `new Worker(new URL(…, import.meta.url), { type: "module" })` shape is
+     load-bearing and must stay literal: Vite matches it as an AST pattern to
+     decide that field-worker.ts is a worker entry and bundle it as one.
+     Lifting the URL into a variable or a helper is enough to lose the match,
+     and then Vite copies the raw .ts file to dist as a static asset instead -
+     which builds cleanly, ships, and 404s the worker in production. Verified
+     by doing exactly that: dist held `field-worker.CiJLJbue.ts`. */
   const worker = new Worker(new URL("./field-worker.ts", import.meta.url), {
     type: "module",
   });

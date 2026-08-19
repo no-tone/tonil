@@ -24,6 +24,32 @@ describe("buildSecurityHeaders", () => {
     expect(headers["Strict-Transport-Security"]).toBeUndefined();
   });
 
+  it("requires Trusted Types in production, allowing exactly one policy", () => {
+    const { csp } = buildSecurityHeaders({
+      url: new URL("https://no-tone.com/"),
+      nonce: "abc123",
+    });
+    expect(csp).toContain("require-trusted-types-for 'script'");
+    // The name has to match the createPolicy call in @repo/ui's
+    // trusted-types.ts. A mismatch throws there and the gradient never
+    // starts - in production only, since dev does not send the directive.
+    expect(csp).toContain("trusted-types default");
+    // Exactly one, and no `'allow-duplicates'`: a second policy could be
+    // created to launder arbitrary strings past the first.
+    expect(csp).not.toMatch(/trusted-types [^;]*\s\S+/);
+  });
+
+  it("does not require Trusted Types in dev, which would break HMR", () => {
+    // Astro's dev client and error overlay are built with innerHTML. The
+    // directive would reject the dev server, not the site.
+    const { csp } = buildSecurityHeaders({
+      url: new URL("http://localhost:4321/"),
+      nonce: "abc123",
+    });
+    expect(csp).not.toContain("require-trusted-types-for");
+    expect(csp).not.toContain("trusted-types");
+  });
+
   it("defaults Cross-Origin-Resource-Policy to same-origin", () => {
     const { headers } = buildSecurityHeaders({
       url: new URL("https://no-tone.com/"),

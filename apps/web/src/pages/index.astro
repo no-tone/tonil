@@ -2,16 +2,28 @@
 // biome-ignore-all lint/correctness/noUnusedImports: used in the template
 // below the frontmatter fence, which Biome's Astro support doesn't analyze.
 // biome-ignore-all lint/correctness/noUnusedVariables: ditto.
+import { buildPersonSchema } from "@repo/content";
 import T from "@repo/ui/site/T.astro";
+import { SITE_NAME, SITE_URL } from "../consts";
 import { INTRO } from "../copy/intro";
 import SiteLayout from "../layouts/SiteLayout.astro";
+
+/* Who this is, in a form a machine can read. The page says it in prose; this
+   says the same thing in schema.org's vocabulary, built from the same CV the
+   /cv page renders so the two cannot disagree. */
+const person = buildPersonSchema({
+  name: SITE_NAME,
+  url: SITE_URL,
+  sameAs: ["https://github.com/no-tone"],
+});
 ---
 
 <SiteLayout
-  title="home · no-tone"
-  description="Software engineer. Web applications end to end - front-end, API, and the infrastructure under them."
+  title="Software engineer · web applications end to end · no-tone"
+  description="Software engineer building web applications end to end - the front-end, the API behind it, and the infrastructure both run on. Currently at a digital solutions studio, finishing an MSc in Software Engineering."
   section="intro"
   ramp="moss"
+  schema={person}
 >
   <h1 class="site__title">
     <T en="Hi, I'm no-tone." pt="Olá, sou o no-tone." />

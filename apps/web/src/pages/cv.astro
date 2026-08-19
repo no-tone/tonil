@@ -4,6 +4,8 @@
 // biome-ignore-all lint/correctness/noUnusedVariables: ditto.
 import {
   BEST_AT,
+  buildPersonSchema,
+  buildProfilePageSchema,
   EDUCATION,
   EXPERIENCE,
   INTERESTS,
@@ -11,7 +13,19 @@ import {
   SPOKEN,
 } from "@repo/content";
 import T from "@repo/ui/site/T.astro";
+import { SITE_NAME, SITE_URL } from "../consts";
 import SiteLayout from "../layouts/SiteLayout.astro";
+
+/* A ProfilePage rather than a bare Person: this document is *about* someone,
+   and saying so is what lets a consumer attach the Person to the page instead
+   of inferring the relationship. Everything in it is rendered below. */
+const profile = buildProfilePageSchema(
+  buildPersonSchema({
+    name: SITE_NAME,
+    url: SITE_URL,
+    sameAs: ["https://github.com/no-tone"],
+  }),
+);
 
 /* The same CV `ssh cv.no-tone.com` serves, from @repo/content.
 
@@ -36,10 +50,11 @@ const bestAt = zip(BEST_AT.en, BEST_AT.pt);
 ---
 
 <SiteLayout
-  title="cv · no-tone"
-  description="Experience, education and skills."
+  title="CV · experience, education and skills · no-tone"
+  description="Roles and dates, education, the languages and frameworks used day to day, and the infrastructure behind them. Also readable in a terminal: ssh cv.no-tone.com."
   section="cv"
   ramp="dusk"
+  schema={profile}
 >
   <h1 class="site__title"><T en="CV" pt="CV" /></h1>
 

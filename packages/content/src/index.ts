@@ -23,6 +23,11 @@ export {
 } from "./github-repos";
 export { fetchWithTimeout } from "./http";
 export {
+  buildPersonSchema,
+  buildProfilePageSchema,
+  type PersonSchemaOptions,
+} from "./person-schema";
+export {
   ALL_APP_TAGS,
   type AppTag,
   resolveProbePath,

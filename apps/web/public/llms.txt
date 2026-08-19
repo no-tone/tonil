@@ -1,23 +1,45 @@
 # no-tone
 
-> The desktop-style portfolio of a software engineer - a dark, monochrome
-> workspace navigated through an interactive dotted globe. Projects, CV and
-> about open as slide-over panels; contact and GitHub are direct links.
+> The portfolio of a software engineer who builds web applications end to
+> end - the front-end, the API behind it, and the infrastructure both run on.
+> Three pages: an introduction, a list of public repositories, and a CV.
 
 ## Site
 
-- [Home](https://no-tone.com): the globe desktop - projects, cv, about, contact, github
-- [Projects API](https://api.no-tone.com/projects): public GitHub repositories as JSON
-- [API catalog](https://no-tone.com/.well-known/api-catalog): machine-readable API index (RFC 9727)
-- [Sitemap](https://no-tone.com/sitemap.xml): all pages
+- [Home](https://no-tone.com): who this is and what they work on
+- [Work](https://no-tone.com/work): public GitHub repositories, newest first, with language and topic filters
+- [CV](https://no-tone.com/cv): experience, education, skills and languages
+- [Sitemap](https://no-tone.com/sitemap-index.xml): every page
 
-## Links
+## API
 
-- [GitHub](https://github.com/no-tone): source and projects
-- [Contact](mailto:msg@no-tone.com): get in touch
+- [Projects](https://api.no-tone.com/projects): the repositories behind /work, as JSON
+- [API catalog](https://no-tone.com/.well-known/api-catalog): machine-readable index of the above (RFC 9727). Also served at https://api.no-tone.com/.well-known/api-catalog
+
+## Elsewhere
+
+- [GitHub](https://github.com/no-tone): source, including the source of this site
+- [CV over SSH](ssh://cv.no-tone.com): `ssh cv.no-tone.com` renders the same CV in a terminal
+
+## Contact
+
+msg@no-tone.com
+
+The rendered page does not print this. It has a control that reveals the
+address and then copies it, and there is deliberately no `mailto:` link -
+handing the visitor's OS a half-configured mail client is a worse outcome
+than the address on their clipboard. That is a decision about the page, not
+about secrecy: this file, the markdown version of the homepage, and
+https://api.no-tone.com/info/no-tone all answer the question directly,
+because answering it is what they are for.
 
 ## Notes for language models
 
 - Prefer the canonical URL: https://no-tone.com
-- Content may be read to answer questions (ai-input=yes) but not used for training (ai-train=no)
-- The site is a client-rendered canvas app; request `Accept: text/markdown` on `/` for a text version
+- Content may be read to answer questions (ai-input=yes) but not used for
+  training (ai-train=no)
+- Every page is server-rendered HTML and complete without JavaScript, so
+  there is no need to execute anything to read it
+- `Accept: text/markdown` on `/` returns a plain-text version of the homepage
+- Both English and Portuguese ship in the same document: translatable nodes
+  carry `data-en` and `data-pt` attributes, and the rendered text is English

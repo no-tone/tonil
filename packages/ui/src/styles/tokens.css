@@ -41,7 +41,19 @@
   --text: #ffffff;
   --text-strong: #ffffff;
   --text-muted: rgba(255, 255, 255, 0.62);
-  --text-faint: rgba(255, 255, 255, 0.4);
+  /* 0.52, not 0.4.
+   *
+   * At 0.4 this resolves to #666 on black, which is a contrast ratio of
+   * 3.66:1 - under the 4.5:1 WCAG AA asks for at these sizes, and every use
+   * of this token is normal-size text: the inactive nav label, the filter's
+   * captions, the CV's dates, the language you are not currently reading. A
+   * Lighthouse run named the `pt` button specifically.
+   *
+   * 0.52 is #858585 and 5.69:1. It is still the faintest thing on the page
+   * and still reads as recessive next to --text-muted; it is just no longer
+   * recessive to the point of being unreadable, which was never the
+   * intention. Do not lower it without recomputing. */
+  --text-faint: rgba(255, 255, 255, 0.52);
 
   --border: rgba(255, 255, 255, 0.16);
   --border-strong: rgba(255, 255, 255, 0.3);
@@ -116,8 +128,17 @@ html[data-theme="light"] {
 
   --text: var(--vire-slate);
   --text-strong: var(--vire-slate-dark);
-  --text-muted: rgba(34, 41, 57, 0.66);
-  --text-faint: rgba(34, 41, 57, 0.42);
+  /* Both raised for the same reason as the dark set, and by more, because
+     dark ink fading into light paper loses contrast faster than light text
+     fading into black. On #f7f7f5 the old values measured 4.70:1 for muted
+     and 2.44:1 for faint; faint was not close. These are 6.85:1 and 4.70:1.
+
+     Nothing renders in this theme today - every page in the repo passes
+     `theme="dark"` to BaseHead, which is required precisely so a page cannot
+     forget to decide. The values are corrected anyway: a palette that is
+     known to fail is a trap for whoever turns it on, and it is two numbers. */
+  --text-muted: rgba(34, 41, 57, 0.78);
+  --text-faint: rgba(34, 41, 57, 0.66);
   --accent: var(--vire-slate-dark);
   --accent-hover: #000000;
 

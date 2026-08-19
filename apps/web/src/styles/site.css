@@ -62,11 +62,7 @@ body {
 
 /* Body copy is --text (white), not --text-muted. Grey-on-black body text is
    a contrast problem before it is a taste one; muted is for labels and
-   metadata, not for the thing you are meant to read.
-
-   No max-width: the column is already bounded by the field on its right, and
-   a `ch` cap on top of that was leaving several hundred pixels of the page
-   empty for no reason. The column *is* the measure. */
+   metadata, not for the thing you are meant to read. */
 .site__body p {
   font-size: var(--body-size);
   line-height: 1.65;
@@ -76,10 +72,13 @@ body {
 
 /* Running prose wants a measure. The column is bounded by the field on one
    side, which at 1440px still leaves lines long enough to lose your place
-   in; at narrower widths the column is already shorter than this and the
-   cap does nothing. */
+   in; at narrower widths the column is already shorter than this and the cap
+   does nothing.
+
+   `--measure` rather than a `ch` value - see shell.css for why a measure in
+   `ch` quietly resizes itself depending on which font finished loading. */
 .site__body {
-  max-width: 62ch;
+  max-width: var(--measure);
 }
 
 .site__body a {
@@ -104,7 +103,7 @@ body {
 
 .cv,
 .work {
-  max-width: 62ch;
+  max-width: var(--measure);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -190,7 +189,7 @@ body {
   display: flex;
   align-items: center;
   gap: 1.25rem;
-  max-width: 62ch;
+  max-width: var(--measure);
   margin-bottom: 0.5rem;
   padding-bottom: 0.9rem;
   font-size: var(--body-size);
@@ -297,7 +296,7 @@ body {
 }
 
 .work__note {
-  max-width: 62ch;
+  max-width: var(--measure);
   margin: 0 0 1.5rem;
   font-size: var(--body-size);
   color: var(--text-muted);

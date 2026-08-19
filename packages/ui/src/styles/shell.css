@@ -21,6 +21,23 @@
   /* One measurement for running text, shared by body copy and the footer so
      the two cannot drift apart. */
   --body-size: clamp(1rem, 1.05vw, 1.0625rem);
+  /* How wide a paragraph is allowed to get.
+   *
+   * Roughly seventy characters at our size, which is the point of a measure -
+   * but stated in `rem` rather than `ch`, and that is the whole reason this
+   * token exists.
+   *
+   * `ch` is the width of the font's `0` glyph, so a `ch` measure silently
+   * changes width with whatever face happens to be active. Measured on the
+   * live site: `62ch` is 625px in Hanken Grotesk and 702px in the system
+   * fallback. The face is declared `font-display: optional`, so before it was
+   * preloaded a hard reload rendered every column 77px wider than a normal
+   * load - the same page, two layouts, depending on the state of a cache.
+   *
+   * The preload closed that window. This closes the mechanism: a column
+   * measured in `rem` is the same column whatever the browser managed to
+   * download. */
+  --measure: 44rem;
   /* The field's own framing, and deliberately not --gutter: that is the
      *content's* margin, and they are not the same measurement. */
   --field-inset: 12px;

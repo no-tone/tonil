@@ -91,6 +91,23 @@ lightweight goroutine sets in one process, not ten processes.
 
 Which makes **Oracle Cloud Free Tier** the obvious host - see step 0.
 
+The whole list, end to end:
+
+- **An Oracle Cloud account** with a shape launched and a public IPv4 (step 0)
+- **`git` and `iptables-persistent` on the box** - and nothing else; the
+  service itself has no runtime dependencies at all (step 0)
+- **Two firewall holes**, in the VCN security list *and* in the box's own
+  `iptables` (step 0 - this is the step that wastes the most time)
+- **`apps/api` already deployed**, because the allowlist lives there (step 2)
+- **Two secrets on that Worker**: `SSH_GATEWAY_TOKEN` and
+  `SSH_AUTHORIZED_KEYS` (step 2)
+- **A DNS record** for `cv.no-tone.com`, grey-clouded (step 6)
+
+You do not need: Docker, a reverse proxy, a Go toolchain on the box, a TLS
+certificate, or a Unix account for visitors.
+
+Budget an hour, most of it waiting on Oracle's console.
+
 ---
 
 ## 0. The box (Oracle Cloud Free Tier)
@@ -114,6 +131,73 @@ The catch is capacity: A1 is the most requested shape Oracle offers and
 try another availability domain in the region. The E2.1.Micro is the fallback
 and is genuinely enough for this service alone; only the build target changes.
 
+### Creating it
+
+Oracle's console calls this Compute → Instances → **Create instance**. What
+matters, in the order the form asks:
+
+| Field | Take | Why |
+| --- | --- | --- |
+| **Placement** | any availability domain | A1 capacity varies between them; this is the field to change when launch fails |
+| **Image** | **Canonical Ubuntu 24.04** | Any Linux works. Ubuntu is what the commands below assume; Oracle Linux differs in two places, both flagged |
+| **Shape** | `VM.Standard.A1.Flex`, **2 OCPU / 12 GB** | The whole Always Free A1 allowance, as one machine - see above |
+| **Primary VNIC → public IPv4** | **assign** | Without it the box has no address to point DNS at |
+| **Add SSH keys** | upload `~/.ssh/id_ed25519.pub` | The *only* way in. There is no password login, and no way to add a key later without the console's serial connection |
+
+That last row is the one to get right first time. Oracle installs the key you
+give it here for the image's default user and nothing else; if you skip it or
+upload the wrong file, the instance exists and you cannot log into it.
+
+The default user is **`ubuntu`** on Ubuntu images and **`opc`** on Oracle
+Linux. There is no root login. So the first connection is:
+
+```bash
+ssh ubuntu@<public-ip>
+```
+
+Everything in this document from step 1 onward happens over that connection.
+Set up a host alias now, because every step below assumes one and because the
+port changes underneath you in step 1:
+
+```sshconfig
+# ~/.ssh/config on YOUR machine
+Host box
+  HostName <public-ip>
+  User ubuntu
+  Port 22            # becomes 2200 after step 1 - remember to change it here
+  IdentityFile ~/.ssh/id_ed25519
+```
+
+Then `ssh box` and `scp file box:/tmp/` work as written throughout.
+
+### What the box needs installed
+
+Almost nothing. The Go binary is statically linked with no libc or cgo
+dependency, so there is no runtime, no interpreter and no package to install
+for `ssh-cv` itself. Two things are needed by the *steps*, not by the service:
+
+```bash
+sudo apt update
+sudo apt install -y git iptables-persistent
+```
+
+- **`git`** - step 3 clones the dotfiles repository onto the box. Skip it if
+  you are going to copy the dotfiles across by other means, or if you are
+  running without the dotfiles pane.
+- **`iptables-persistent`** - provides `netfilter-persistent`, which is what
+  makes the firewall rule below survive a reboot. Without it the rule works
+  until the first restart and then silently disappears, which is a genuinely
+  confusing way to lose the service. Its installer asks whether to save the
+  current rules; say yes.
+
+On Oracle Linux images, neither applies: `git` is `sudo dnf install -y git`,
+and the firewall is `firewalld`, which persists on its own.
+
+> **If the dotfiles repository is private**, `git clone` over HTTPS will
+> prompt for credentials the service account cannot answer. Either make it
+> public, use a deploy key, or copy the directory over with `scp -r` and skip
+> git on the box entirely. The pane only ever reads the directory.
+
 ### Build for the right architecture
 
 A1 is Arm. Step 3's build line becomes:
@@ -123,8 +207,20 @@ GOOS=linux GOARCH=arm64 bun run build     # A1 (Ampere)
 GOOS=linux GOARCH=amd64 bun run build     # E2.1.Micro
 ```
 
-Nothing else in this document changes - the binary is static and has no
-libc or cgo dependency either way.
+Nothing else in this document changes - the binary is static and has no libc
+or cgo dependency either way. Setting `GOOS`/`GOARCH` is also what turns cgo
+off, which is why: the pure-Go DNS resolver uses only UDP and TCP sockets, and
+step 4's `RestrictAddressFamilies=AF_INET AF_INET6` would block the cgo
+resolver's Unix socket. Build on your machine, not on the box - a native
+`go build` there has cgo enabled and can produce a binary systemd then refuses
+to let resolve anything.
+
+Check what you actually produced before copying it up; a mismatch fails at
+`ExecStart` with `Exec format error`, which does not name the cause:
+
+```bash
+file bin/ssh-cv     # want: ELF 64-bit … ARM aarch64, statically linked
+```
 
 ### ⚠️ Two firewalls, and only one of them is in the console
 
@@ -235,8 +331,15 @@ sudo sed -i 's/^#*Port 22/Port 2200/' /etc/ssh/sshd_config
 sudo systemctl restart ssh
 ```
 
-Now open a **second terminal** and confirm `ssh -p 2200 box` works. Do not
-close the first one until it does.
+Now open a **second terminal** and confirm `ssh -p 2200 ubuntu@<public-ip>`
+works. Do not close the first one until it does. If it fails, you still have a
+working session in the first terminal to undo it with.
+
+Once it works, change `Port 22` to `Port 2200` in the `box` entry in your
+`~/.ssh/config`. Every `ssh box` and `scp … box:` below - step 3 in
+particular - goes to the admin daemon, not to `ssh-cv`, and will fail
+confusingly if the alias is still pointing at 22. Port 22 on this address now
+belongs to the CV.
 
 If the provider has a firewall, open 2200 and keep 22 open. On Oracle
 Cloud that means both layers - see step 0, and do it *before* this step.
@@ -408,6 +511,15 @@ way, and what you see depends on your key.
 
 ## 7. Check
 
+Before DNS has propagated, or to test the box directly, everything works
+against the IP - the server never sees the hostname anyway (SSH has no SNI):
+
+```bash
+ssh <public-ip>                       # the CV, from the box itself
+```
+
+Then, once DNS resolves:
+
 ```bash
 ssh cv.no-tone.com                    # CV, three panes
 ssh -o IdentitiesOnly=yes -i /dev/null cv.no-tone.com   # as a stranger: still the CV, no dotfiles tab
@@ -416,6 +528,20 @@ ssh pt@cv.no-tone.com                 # opens in Portuguese
 
 The username is not identity - anyone can type anything - but it is honoured
 as a language preference.
+
+### When it does not work
+
+In the order these actually happen:
+
+| Symptom | Cause |
+| --- | --- |
+| `Connection refused` | The service is not running. `sudo systemctl status ssh-cv` |
+| Connection hangs, no prompt | Port 22 open in the VCN security list but not in `iptables` - the trap in step 0 |
+| `Exec format error` in the journal | Binary built for the wrong architecture. See *Build for the right architecture* |
+| Works, but no `dotfiles` tab with an allowlisted key | `--dotfiles` points at something unreadable; the service logs this on startup. Or the fingerprint does not match - compare `ssh-keygen -lf` output against the secret |
+| Works, no `dotfiles` tab for *any* key, journal says `authorization source: none - the CV is public, dotfiles are disabled` | `--authorize-url` unset, so the binary is in its public-CV-only mode |
+| Refuses to start: `SSH_AUTHORIZE_TOKEN is required when --authorize-url is set` | The token in the unit file is missing or empty. Deliberate - see step 2 |
+| `Requires an active PTY` | Expected. `activeterm` rejects sessions with no terminal - see *This does not use OpenSSH* |
 
 ---
 

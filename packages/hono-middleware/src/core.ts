@@ -114,6 +114,41 @@ export function buildSecurityHeaders(
   ];
   if (!isLocalDev) {
     directives.push("upgrade-insecure-requests");
+    /* Trusted Types: a ratchet, not a repair.
+     *
+     * `require-trusted-types-for 'script'` makes the DOM's injection sinks -
+     * innerHTML, outerHTML, insertAdjacentHTML, document.write, eval, the
+     * Worker constructor - reject plain strings. It is worth turning on here
+     * because there is currently nothing to fix: a sweep of every client
+     * module found no HTML sink at all. So this does not clean anything up,
+     * it stops one from arriving, and it fails loudly at the moment someone
+     * writes the first `innerHTML =` rather than quietly at some later audit.
+     *
+     * The one sink that does exist is the gradient's module worker. It is
+     * covered by a *default* policy (@repo/ui/src/trusted-types.ts) that
+     * implements `createScriptURL` - validating same-origin - and
+     * deliberately implements neither `createHTML` nor `createScript`, so
+     * those sinks throw rather than being waved through.
+     *
+     * A default policy rather than a named one, and that is a build
+     * constraint rather than a preference: Vite recognises a worker by the
+     * literal `new Worker(new URL(…, import.meta.url))` shape, so the
+     * argument cannot be wrapped in a named policy's `createScriptURL(…)`
+     * call without Vite losing the pattern and shipping the raw TypeScript
+     * as an asset. `trusted-types default` names exactly one policy, so a
+     * second cannot be created to launder strings past the first.
+     *
+     * Production only. Astro's dev server builds its HMR client and error
+     * overlay out of innerHTML, so enforcing this under `astro dev` would
+     * break the dev server rather than the site. `wrangler dev` serves the
+     * production policy (it resolves the request URL from the configured
+     * route, not the listening host), which is where this gets tested.
+     *
+     * Ignored entirely by browsers without Trusted Types, which is most of
+     * them outside Chromium. That is the nature of a defence-in-depth header:
+     * it costs nothing where it does not apply. */
+    directives.push("require-trusted-types-for 'script'");
+    directives.push("trusted-types default");
   }
 
   return { isLocalDev, headers, csp: directives.join("; ") };

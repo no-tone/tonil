@@ -58,9 +58,23 @@ interface Props {
   ramp?: string;
   /** Route id, for the nav's active state. */
   section: string;
+  /**
+   * Extra JSON-LD for this page, merged after the site-wide `WebSite` node.
+   *
+   * Per page rather than site-wide because the useful nodes are page-shaped:
+   * a `Person` belongs on the pages that describe one, and claiming it
+   * everywhere would assert it on pages that show nothing to back it up.
+   */
+  schema?: Record<string, unknown> | Record<string, unknown>[];
 }
 
-const { title, description, ramp = "moss", section } = Astro.props as Props;
+const {
+  title,
+  description,
+  ramp = "moss",
+  section,
+  schema,
+} = Astro.props as Props;
 
 const css = [
   tokensCss,
@@ -130,6 +144,7 @@ const MENU: ContextMenuEntry[] = [
       title={title}
       description={description}
       css={css}
+      schema={schema}
       theme="dark"
     />
     <!--
