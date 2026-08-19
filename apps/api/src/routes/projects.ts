@@ -13,7 +13,7 @@ const EDGE_TTL_SECONDS = 900;
 const LAST_UPDATED_HEADER = "x-tonil-last-updated";
 
 // CORS (Access-Control-Allow-Origin, Vary) and Cross-Origin-Resource-Policy
-// are both handled once for the whole API in src/index.ts — this route used
+// are both handled once for the whole API in src/index.ts - this route used
 // to also reject any cross-origin request outright (origin !== same-origin
 // → 403), which made sense when no-tone.com served this route itself, but
 // now that apps/web and apps/api are deliberately different origins, that
@@ -44,7 +44,7 @@ projectsRoute.get("/", async (c) => {
 });
 
 // Rendered README for a single repo, consumed by apps/web's projects panel.
-// Returns { html: null } rather than a 404 when a repo simply has no README —
+// Returns { html: null } rather than a 404 when a repo simply has no README -
 // "we looked, there isn't one" is a successful answer here, same as /projects
 // returning [], and it keeps the visitor's console clean.
 projectsRoute.get("/:name/readme", async (c) => {
@@ -99,7 +99,7 @@ function respond(
   const headers = buildHeaders(extra);
   if (snapshot.etag) headers.ETag = snapshot.etag;
   // The ETag was previously only used to revalidate against GitHub, never
-  // offered back to callers — so a client that already had the payload
+  // offered back to callers - so a client that already had the payload
   // re-downloaded it on every poll.
   if (snapshot.etag && c.req.header("If-None-Match") === snapshot.etag) {
     return c.body(null, 304, headers);

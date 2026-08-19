@@ -1,21 +1,28 @@
 /* ============================================================
-   apps/dashboard — page-specific layout & chrome.
+   self-hosted launcher - apps/dashboard
+   ============================================================
 
-   Colors, fonts, spacing scale, and radii come from @repo/ui's shared
-   tokens.css; base reset (box-sizing, scrollbar, selection, focus ring,
-   links, html/body sizing) comes from @repo/ui's reset.css. This file only
-   holds what's genuinely specific to the launcher: the topbar/bottombar
-   chrome, the "window" card (with its own visible-on-both-themes shadow —
-   the shared --shadow-window token is tuned dark-on-dark and would be
-   invisible against this page's pure-black background), search/filter
-   controls, the app tile grid, and the up/down/vpn/checking status colors
-   (no shared semantic-status tokens exist yet).
-   ============================================================ */
+   Rebuilt on the shared frame. The reading column, the field beside it and
+   the wordmark come from @repo/ui/styles/shell.css; the footer and the
+   right-click menu are @repo/ui components. What is left in this file is
+   what is genuinely this app's own and nothing else's: the header, the
+   search and filter controls, the app rows, and the status colours.
+
+   It used to be ~540 lines describing a floating "window" card with a
+   titlebar - a desktop metaphor the site itself has since dropped. Deleting
+   it was most of this redesign. */
+
+html,
+body {
+  overscroll-behavior: none;
+}
 
 body {
-  font-family: var(--font-mono);
-  font-size: var(--text-base);
+  background: var(--bg);
+  font-family: var(--font-sans);
+  font-size: var(--body-size, 1rem);
   line-height: 1.55;
+  color: var(--text);
 }
 
 button,
@@ -24,339 +31,251 @@ select {
   font: inherit;
 }
 
-.topbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  padding: 24px 28px;
-  pointer-events: none;
+/* The mark is white on the site because the site is always dark. Here the
+   theme still flips, so it follows the text. */
+.dash .shell__brand {
+  color: var(--text);
 }
 
-.topbar__nav {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  width: 100%;
-  font-size: 16px;
-  letter-spacing: 0.02em;
-}
+/* ---- header ---- */
 
-.topbar__title,
-.topbar__toggle {
-  background: var(--bg);
-  color: var(--chrome-fg);
-  padding: 0 4px;
-  line-height: 1;
-}
-
-.topbar__title {
-  justify-self: start;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.topbar__toggle {
-  border: none;
-  cursor: pointer;
-  display: inline-flex;
-  justify-self: center;
-  pointer-events: auto;
-}
-
-.topbar__toggle:hover {
-  text-decoration: underline;
-}
-
-.topbar__toggleIcon {
-  font-size: 22px;
-}
-
-.launcher {
-  min-height: 100vh;
+.dash__head {
   display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.dash__title {
+  flex: 1;
+  margin: 0;
+  font-size: clamp(1.375rem, 1.9vw, 1.75rem);
+  font-weight: var(--fw-medium);
+  letter-spacing: -0.012em;
+}
+
+.dash__iconbtn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 94px 28px 104px;
-}
-
-.launcher__window {
-  width: min(980px, 100%);
-  border: 1px solid var(--chrome-fg);
-  background: var(--bg);
-  box-shadow:
-    0 0 0 1px var(--bg),
-    14px 14px 0 rgba(0, 0, 0, 0.12);
-}
-
-html[data-theme="dark"] .launcher__window {
-  box-shadow:
-    0 0 0 1px var(--bg),
-    14px 14px 0 rgba(255, 255, 255, 0.16);
-}
-
-.launcher__titlebar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--chrome-fg);
-  color: var(--chrome-fg);
-  font-size: 14px;
-  line-height: 1;
-}
-
-.launcher__title {
-  margin: 0;
-  color: var(--text-strong);
-  font-size: 16px;
-  font-weight: 400;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.launcher__note {
-  color: var(--text);
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.refresh {
-  justify-self: end;
   width: 30px;
-  height: 24px;
-  border: none;
-  background: transparent;
-  color: var(--chrome-fg);
-  cursor: pointer;
-  display: inline-grid;
-  place-items: center;
+  height: 30px;
   padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition-border);
 }
 
-.refresh:hover {
-  text-decoration: underline;
+.dash__iconbtn:hover,
+.dash__iconbtn:focus-visible {
+  border-color: var(--border-strong);
+  color: var(--text);
 }
 
-.refresh svg {
-  width: 18px;
-  height: 18px;
+.dash__iconbtn svg {
+  width: 16px;
+  height: 16px;
 }
 
-.refresh.spinning svg {
-  animation: spin360 520ms ease-in-out;
+.dash__refresh.spinning svg {
+  animation: dash-spin 520ms ease-in-out;
 }
 
-@keyframes spin360 {
+@keyframes dash-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-.controls {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px) auto;
-  gap: 12px;
-  align-items: end;
-  padding: 14px;
-  border-bottom: 1px solid var(--border);
-}
+/* ---- search and filters ---- */
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.label {
-  color: var(--text);
-  font-size: 12px;
-  letter-spacing: 0.02em;
-  text-transform: lowercase;
-}
-
-.fieldControl {
+.dash__controls {
   display: flex;
   align-items: center;
-  min-height: 43px;
-  border: 1px solid var(--border);
-  background: transparent;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.fieldControl:focus-within {
-  border-color: var(--selection-border);
+.dash__field {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  flex: 1;
 }
 
-.icon {
-  width: 18px;
-  height: 18px;
-  margin-left: 10px;
-  color: var(--text);
+.dash__field--tag {
   flex: 0 0 auto;
 }
 
-input,
-select {
-  appearance: none;
-  width: 100%;
+.dash__fieldlabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-faint);
+}
+
+/* Underlines rather than boxes. A launcher is mostly rows of text with a
+   hairline between them; a bordered input in the middle of that reads as a
+   different design arriving. */
+.dash__field input,
+.dash__field select {
   min-width: 0;
+  flex: 1;
+  padding: 0.35rem 0;
   border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--text-strong);
-  padding: 10px;
-  font-size: 16px;
-  line-height: 1.2;
-}
-
-input::placeholder {
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
   color: var(--text);
 }
 
-.select {
-  position: relative;
-}
-
-.select select {
+/* The native select paints its own rounded box, which is the one piece of
+   platform chrome loud enough to break the row of hairlines. Strip it and
+   draw the caret, but keep the element - a real <select> is the accessible
+   thing and a div pretending to be one is not. */
+.dash__field select {
+  appearance: none;
+  padding-right: 1.1rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    right 0.42rem center,
+    right 0.15rem center;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  color: var(--text);
   cursor: pointer;
-  padding-right: 32px;
 }
 
-.select::after {
-  content: "";
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 6px solid var(--text);
-  transform: translateY(-35%);
-  pointer-events: none;
-}
-
-.meta {
-  display: inline-flex;
-  align-items: center;
-  min-height: 43px;
+.dash__field select option {
+  background: var(--surface);
   color: var(--text);
-  font-size: 14px;
+}
+
+.dash__field input::placeholder {
+  color: var(--text-faint);
+}
+
+.dash__field input:focus,
+.dash__field select:focus {
+  outline: none;
+  border-bottom-color: var(--text);
+}
+
+.dash__count {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-faint);
   white-space: nowrap;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0;
+/* ---- app rows ---- */
+
+.dash__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
+/* One grid, so names and statuses line up down the page instead of each row
+   solving its own layout. The tags column collapses first because it is the
+   least load-bearing thing in the row. */
 .tile {
-  position: relative;
-  z-index: 0;
-  min-width: 0;
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  align-items: center;
+  gap: 0 0.9rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--border);
   color: var(--text);
   text-decoration: none;
-  border-bottom: 1px solid var(--border);
-  border-right: 1px solid var(--border);
-  transform: translateY(0);
-  transition:
-    border-color 120ms ease,
-    transform 120ms ease;
 }
 
-.tile:nth-child(2n) {
-  border-right: 0;
+/* The top rule belongs to the list, not to its first row: filtering hides
+   rows, and a border owned by "the first child" disappears with it. */
+.dash__list {
+  border-top: 1px solid var(--border);
+}
+
+/* `[hidden]` sets `display: none` at the UA level, which any author `display`
+   loses to - so a filtered-out tile stayed on screen and the search appeared
+   to do nothing. Restating it here is the fix, and it has to sit next to the
+   rule that caused it. */
+.tile[hidden] {
+  display: none;
 }
 
 .tile:hover,
 .tile:focus-visible {
-  z-index: 1;
-  border-color: var(--selection-border);
-  transform: translateY(-1px);
+  outline: none;
 }
 
-.tile-inner {
-  display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) auto;
-  gap: 14px;
-  align-items: center;
-  min-height: 94px;
-  padding: 14px;
+.tile__icon {
+  display: flex;
+  width: 28px;
+  height: 28px;
 }
 
-.logo {
-  display: grid;
-  place-items: center;
-  width: 54px;
-  height: 54px;
-}
-
-.logo :where(picture) {
-  display: grid;
-  place-items: center;
-}
-
-.logo :where(img) {
-  width: 44px;
-  height: 44px;
+.tile__icon img {
+  width: 28px;
+  height: 28px;
   object-fit: contain;
-  border-radius: 0;
-  filter: grayscale(1) contrast(1.08);
-  image-rendering: auto;
+  border-radius: 4px;
 }
 
-.tile:hover .logo :where(img),
-.tile:focus-visible .logo :where(img) {
-  filter: none;
-}
-
-.appMeta {
+.tile__name {
   min-width: 0;
-}
-
-.name {
-  color: var(--text-strong);
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.tile:hover .tile__name,
+.tile:focus-visible .tile__name {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
+.tile__tags {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-faint);
+  white-space: nowrap;
 }
 
-.pill {
-  color: var(--text);
-  font-size: 12px;
-  line-height: 1.2;
+.dash__empty {
+  margin: 1.5rem 0;
+  color: var(--text-muted);
 }
 
-.pill + .pill::before {
-  content: "/";
-  margin-right: 6px;
+.dash__empty a {
   color: var(--text);
+  text-underline-offset: 3px;
 }
+
+/* No field on this page, so the column has the width to itself. */
+.dash--bare .shell__reading {
+  padding-right: var(--gutter);
+}
+
+/* ---- status ---- */
 
 .status {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  color: var(--text);
-  font-size: 12px;
+  gap: 0.5rem;
+  min-width: 4.5rem;
+  justify-content: flex-end;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
   line-height: 1;
   white-space: nowrap;
   user-select: none;
@@ -364,186 +283,111 @@ input::placeholder {
 }
 
 .status .dot {
-  width: 10px;
-  height: 10px;
-  border: 1px solid var(--chrome-fg);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
   background: transparent;
 }
 
+/* Light-theme values: dark enough to read on white. The dark-theme block
+   below lightens them for the same reason in reverse. No shared semantic
+   status tokens exist yet - when a second surface needs these, they should
+   move to tokens.css rather than be copied. */
 .status[data-status="up"] {
   color: #0b7a2a;
 }
-
 .status[data-status="up"] .dot {
   background: #0b7a2a;
+  border-color: #0b7a2a;
 }
-
 .status[data-status="down"] {
   color: #b42318;
 }
-
 .status[data-status="down"] .dot {
   background: #b42318;
+  border-color: #b42318;
 }
-
 .status[data-status="checking"] {
   color: #946200;
 }
-
 .status[data-status="checking"] .dot {
   background: #946200;
+  border-color: #946200;
 }
-
 .status[data-status="vpn"] {
   color: #1d4ed8;
 }
-
 .status[data-status="vpn"] .dot {
   background: #1d4ed8;
+  border-color: #1d4ed8;
 }
 
 html[data-theme="dark"] .status[data-status="up"] {
   color: #86efac;
 }
-
 html[data-theme="dark"] .status[data-status="up"] .dot {
   background: #86efac;
+  border-color: #86efac;
 }
-
 html[data-theme="dark"] .status[data-status="down"] {
   color: #fca5a5;
 }
-
 html[data-theme="dark"] .status[data-status="down"] .dot {
   background: #fca5a5;
+  border-color: #fca5a5;
 }
-
 html[data-theme="dark"] .status[data-status="checking"] {
   color: #fbbf24;
 }
-
 html[data-theme="dark"] .status[data-status="checking"] .dot {
   background: #fbbf24;
+  border-color: #fbbf24;
 }
-
 html[data-theme="dark"] .status[data-status="vpn"] {
   color: #93c5fd;
 }
-
 html[data-theme="dark"] .status[data-status="vpn"] .dot {
   background: #93c5fd;
+  border-color: #93c5fd;
 }
 
-.empty {
-  margin: 0;
-  padding: 18px 14px;
-  border-top: 1px solid var(--border);
-  color: var(--text);
-  font-size: 16px;
+/* ---- footer ---- */
+
+/* The shared footer assumes it is the last row of a reading column and
+   pushes itself down with `margin-top: auto`. That is exactly right here, so
+   the only thing to adjust is how far it sits from the list above it. */
+.dashfoot {
+  padding-top: clamp(2.5rem, 6vw, 4rem);
 }
 
-.bottombar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 50;
-  padding: 24px 28px 32px;
-  display: flex;
-  justify-content: center;
-  pointer-events: none;
-}
+@media (max-width: 620px) {
+  .dash__controls {
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+  }
 
-.bottombar__nav {
-  display: inline-flex;
-  align-items: center;
-  gap: 0;
-  font-size: 14px;
-  letter-spacing: 0.02em;
-  text-transform: lowercase;
-  pointer-events: auto;
-}
+  .dash__field {
+    flex: 1 0 100%;
+  }
 
-.bottombar__link,
-.bottombar__sep {
-  color: var(--chrome-fg);
-  background: var(--bg);
-  padding: 0 2px;
-  line-height: 1;
-}
+  .dash__field--tag {
+    flex: 1 0 auto;
+  }
 
-.bottombar__link {
-  text-decoration: none;
-}
+  .tile {
+    grid-template-columns: 28px 1fr auto;
+  }
 
-.bottombar__link:hover {
-  text-decoration: underline;
+  /* The tags are the first thing to go: the name and the status are what a
+     row is for. */
+  .tile__tags {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tile,
-  .refresh.spinning svg {
+  .dash__refresh.spinning svg {
     animation: none;
-    transition: border-color 120ms ease;
-    transform: none;
-  }
-}
-
-@media (max-width: 760px) {
-  body {
-    font-size: 16px;
-  }
-
-  .topbar {
-    padding: 22px 18px;
-  }
-
-  .launcher {
-    align-items: stretch;
-    padding: 86px 18px 98px;
-  }
-
-  .launcher__titlebar,
-  .controls {
-    grid-template-columns: 1fr;
-  }
-
-  .launcher__note,
-  .refresh,
-  .meta {
-    justify-self: start;
-  }
-
-  .grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tile,
-  .tile:nth-child(2n) {
-    border-right: 0;
-  }
-
-  .tile-inner {
-    grid-template-columns: 46px minmax(0, 1fr);
-  }
-
-  .logo {
-    width: 46px;
-    height: 46px;
-  }
-
-  .logo :where(img) {
-    width: 38px;
-    height: 38px;
-  }
-
-  .status {
-    grid-column: 2;
-    justify-self: start;
-  }
-
-  .bottombar {
-    position: static;
-    padding: 20px 18px 28px;
   }
 }

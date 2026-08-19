@@ -31,7 +31,7 @@ export function problemResponse(c: Context, problem: ProblemDetails): Response {
 }
 
 /**
- * An `app.onError` handler (NOT middleware — Hono resolves thrown errors via
+ * An `app.onError` handler (NOT middleware - Hono resolves thrown errors via
  * its own onError hook before they'd reach a wrapping middleware's catch
  * block) that renders any error as application/problem+json.
  */

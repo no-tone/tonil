@@ -1,0 +1,437 @@
+/* no-tone.com.
+
+   The frame (the reading column, the field beside it, the wordmark's size
+   and position) is shared with the dashboard and lives in
+   @repo/ui/styles/shell.css, as does the 404. What is here is what this site
+   says rather than how it is arranged: type scale, the section nav, and the
+   CV and work lists. */
+
+/* Kill the overscroll bounce. At the top or bottom of the page the browser
+   rubber-bands, and everything painted in the document slides with it. The
+   field is meant to be a window onto something behind the page, not a sheet
+   of paper stuck to it, so that bump reads as the illusion breaking.
+
+   Here rather than in shell.css: the scroll container is the viewport, so
+   the rule has to land on html/body, and a shared component has no business
+   reaching up to the document root. Whether a page bounces is the page's
+   decision. */
+html,
+body {
+  overscroll-behavior: none;
+}
+
+body {
+  background: var(--bg);
+}
+
+/* No display serif. The old --font-display (Yeseva One) fought everything
+   around it - a high-contrast Didone next to a grotesque reads as two
+   unrelated pages. The heading is the body face at a larger size and a
+   tighter track, which is the quieter and more usual choice, and leaves the
+   field as the only thing being loud. */
+/* A heading, not a billboard. It was set at 60px, which is the size you
+   choose when the page has one sentence on it and needs to look full - and
+   that is the wrong reason to choose a size. At this scale it reads as the
+   first line of a document, and the text underneath is the point. */
+.site__title {
+  font-family: var(--font-sans);
+  font-size: clamp(1.375rem, 1.9vw, 1.75rem);
+  line-height: 1.25;
+  letter-spacing: -0.012em;
+  font-weight: var(--fw-medium);
+  text-wrap: balance;
+  margin: 0 0 1.5rem;
+}
+
+/* The headline accent is filled from the field's own colours - see the
+   onFrame handler in @repo/ui/site/field.ts. If the field is not
+   running (no worker, reduced motion) it falls back to the static token. */
+.site__accent {
+  background-image: var(--field-ramp, none);
+  background-color: var(--accent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@supports not (background-clip: text) {
+  .site__accent {
+    color: var(--accent);
+  }
+}
+
+/* Body copy is --text (white), not --text-muted. Grey-on-black body text is
+   a contrast problem before it is a taste one; muted is for labels and
+   metadata, not for the thing you are meant to read.
+
+   No max-width: the column is already bounded by the field on its right, and
+   a `ch` cap on top of that was leaving several hundred pixels of the page
+   empty for no reason. The column *is* the measure. */
+.site__body p {
+  font-size: var(--body-size);
+  line-height: 1.65;
+  color: var(--text);
+  margin: 0 0 1.15rem;
+}
+
+/* Running prose wants a measure. The column is bounded by the field on one
+   side, which at 1440px still leaves lines long enough to lose your place
+   in; at narrower widths the column is already shorter than this and the
+   cap does nothing. */
+.site__body {
+  max-width: 62ch;
+}
+
+.site__body a {
+  color: var(--text);
+  text-underline-offset: 3px;
+  text-decoration-color: var(--border-strong);
+}
+
+.site__body a:hover,
+.site__body a:focus-visible {
+  text-decoration-color: currentColor;
+}
+
+.site__body code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+/* ============================================================
+   CV + work lists - see pages/cv.astro, pages/work.astro
+   ============================================================ */
+
+.cv,
+.work {
+  max-width: 62ch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--body-size);
+}
+
+.cv__head {
+  margin: 2.75rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--body-size);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-caps);
+  text-transform: lowercase;
+  color: var(--text-faint);
+}
+
+.cv__entry {
+  margin-bottom: 1.6rem;
+}
+
+.cv__role {
+  margin: 0;
+  font-size: var(--body-size);
+  font-weight: var(--fw-medium);
+  color: var(--text);
+}
+
+/* The one place mono earns its keep in running content: these are dates and
+   labels, not prose, and they want to line up rather than read well. */
+.cv__meta {
+  margin: 0.15rem 0 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  color: var(--text-faint);
+}
+
+.cv__list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.cv__list li {
+  margin-bottom: 0.35rem;
+}
+
+/* Two columns where there is room for them, stacked where there is not -
+   a term and its expansion read as a pair either way. */
+.cv__defs {
+  display: grid;
+  grid-template-columns: minmax(9rem, 14rem) 1fr;
+  gap: 0.55rem 1.5rem;
+  margin: 0;
+  line-height: 1.55;
+}
+
+.cv__defs dt {
+  color: var(--text-faint);
+}
+
+.cv__defs dd {
+  margin: 0;
+  color: var(--text);
+}
+
+@media (max-width: 620px) {
+  .cv__defs {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+  }
+
+  .cv__defs dd {
+    margin-bottom: 0.7rem;
+  }
+}
+
+/* The same control the dashboard has, wearing this page's clothes: the
+   behaviour is @repo/ui's mountFilter, only the type and the rules are
+   local. */
+.workfilter {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  max-width: 62ch;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.9rem;
+  font-size: var(--body-size);
+}
+
+.workfilter__field {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.workfilter__field--tag {
+  flex: 0 0 auto;
+}
+
+.workfilter__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-faint);
+}
+
+/* Underlines, not boxes: the list below is rows separated by hairlines, and
+   a bordered input in front of it reads as a different design arriving. */
+.workfilter input,
+.workfilter select {
+  min-width: 0;
+  flex: 1;
+  padding: 0.3rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.94em;
+}
+
+.workfilter input:focus,
+.workfilter select:focus {
+  outline: none;
+  border-bottom-color: var(--text);
+}
+
+.workfilter select {
+  appearance: none;
+  padding-right: 1.1rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    right 0.42rem center,
+    right 0.15rem center;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.workfilter select option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.workfilter__count {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* After the base rules, not before: these override them at equal
+   specificity, so source order is the whole mechanism. */
+@media (max-width: 620px) {
+  .workfilter {
+    flex-wrap: wrap;
+    gap: 0.7rem 1rem;
+  }
+
+  .workfilter__field {
+    flex: 1 0 100%;
+  }
+
+  .workfilter__field--tag {
+    flex: 1 0 auto;
+  }
+}
+
+/* Owned by the list, not by its first row: filtering hides rows, and a
+   border belonging to "the first child" disappears with it. */
+.work {
+  border-top: 1px solid var(--border);
+}
+
+.work__item[hidden] {
+  display: none;
+}
+
+.work__item {
+  padding: 1.1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.work__name {
+  font-family: var(--font-mono);
+  font-size: var(--body-size);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.work__name:hover,
+.work__name:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.work__desc {
+  margin: 0.35rem 0 0.45rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.work__meta {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  color: var(--text-faint);
+}
+
+.work__live {
+  color: var(--text-faint);
+  text-underline-offset: 3px;
+}
+
+.work__live:hover {
+  color: var(--text);
+}
+
+.work__note {
+  max-width: 62ch;
+  margin: 0 0 1.5rem;
+  font-size: var(--body-size);
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   Wordmark + section nav - the travelling line is a view transition, not
+   a script; see ::view-transition-group(nav-line) below.
+   ============================================================ */
+
+.sitenav {
+  position: relative;
+  display: flex;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  margin-bottom: 2.75rem;
+}
+
+.sitenav__item {
+  position: relative;
+  padding: 0 0 0.7rem;
+  font-size: var(--text-sm);
+  letter-spacing: var(--ls-nav);
+  color: var(--text-faint);
+  text-decoration: none;
+  transition: color 220ms var(--ease);
+}
+
+.sitenav__item:hover,
+.sitenav__item:focus-visible {
+  color: var(--text);
+}
+
+.sitenav__item[aria-current="page"] {
+  color: var(--text);
+}
+
+/* The rail every label sits on. Faint on purpose: it exists to give the
+   travelling line something to travel along, not to be seen. */
+.sitenav::before {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 1px;
+  background: var(--border);
+}
+
+/* One line, on the active label. It is a single named element as far as the
+   view transition is concerned, so the browser interpolates it from the old
+   label's position to the new one - the slide is the *navigation*, not a
+   scripted animation on top of it. */
+.sitenav__item[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  background: var(--text);
+  view-transition-name: nav-line;
+}
+
+/* Leaves fast, arrives slow - the way a physical thing moves. */
+::view-transition-group(nav-line) {
+  animation-duration: 460ms;
+  animation-timing-function: cubic-bezier(0.22, 0.92, 0.24, 1);
+}
+
+/* The panel is the only thing that actually swaps. Naming it separately from
+   the root keeps the shell - brand, nav, footer, field - perfectly still. */
+.sitepanel {
+  view-transition-name: site-panel;
+}
+
+::view-transition-old(site-panel) {
+  animation: site-panel-out 200ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(site-panel) {
+  animation: site-panel-in 420ms cubic-bezier(0.16, 0.84, 0.28, 1) 80ms both;
+}
+
+@keyframes site-panel-out {
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes site-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none;
+  }
+}

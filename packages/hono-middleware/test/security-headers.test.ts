@@ -21,6 +21,28 @@ describe("securityHeaders", () => {
     expect(res.headers.get("Cross-Origin-Opener-Policy")).toBe("same-origin");
   });
 
+  it("names image and font origins instead of trusting all of https:", async () => {
+    // In a policy built on `default-src 'none'`, `img-src ... https:` and
+    // `font-src ... https:` were the two directives that trusted the entire
+    // web. Fonts are self-hosted; images come from `'self'` plus whatever the
+    // caller names.
+    const res = await buildApp().request("https://example.com/");
+    const csp = res.headers.get("Content-Security-Policy") ?? "";
+    expect(csp).toContain("img-src 'self' data:");
+    expect(csp).toContain("font-src 'self'");
+    expect(csp).not.toContain("https:;");
+  });
+
+  it("adds only the image origins the caller asks for", async () => {
+    const app = new Hono();
+    app.use(securityHeaders({ imgSrc: ["https://cdn.jsdelivr.net"] }));
+    app.get("/", (c) => c.text("ok"));
+    const res = await app.request("https://example.com/");
+    expect(res.headers.get("Content-Security-Policy")).toContain(
+      "img-src 'self' data: https://cdn.jsdelivr.net",
+    );
+  });
+
   it("relaxes CSP and skips HSTS on configured dev hostnames", async () => {
     const res = await buildApp().request("http://localhost/");
     const csp = res.headers.get("Content-Security-Policy") ?? "";

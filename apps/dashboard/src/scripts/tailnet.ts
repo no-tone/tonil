@@ -20,7 +20,7 @@ interface TailnetDetectionOptions {
 }
 
 /**
- * Impure by nature (needs a real WebRTC stack), so kept as a thin wrapper —
+ * Impure by nature (needs a real WebRTC stack), so kept as a thin wrapper -
  * all the actual branching logic lives in isTailnetAddress, which is unit
  * tested. Not testable outside a browser; verify manually by joining/leaving
  * the tailnet and watching self-hosted tiles switch between `down` and `vpn`.

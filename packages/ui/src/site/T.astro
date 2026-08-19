@@ -1,0 +1,32 @@
+---
+// biome-ignore-all lint/correctness/noUnusedVariables: used in the template
+// below the frontmatter fence, which Biome's Astro support doesn't analyze.
+/**
+ * One string, in both languages.
+ *
+ * Renders the English and carries the Portuguese on a data attribute; the
+ * swap happens in the browser - see src/site/lang.ts for why both ship in the
+ * same document rather than living on separate routes.
+ *
+ * Text only. Anything with markup inside it needs its own bilingual handling,
+ * because a `textContent` swap would throw the markup away.
+ */
+interface Props {
+  en: string;
+  pt: string;
+  /**
+   * Element to render. Defaults to a span.
+   *
+   * Narrowed to the tags that can hold a run of text: `astro check` cannot
+   * type a dynamic tag from a plain `string`, and the alternative - casting
+   * it away - would also accept `<T as="img">`, which cannot have
+   * textContent and so cannot be translated by the swap at all.
+   */
+  as?: "span" | "p" | "li" | "dt" | "dd" | "h1" | "h2" | "h3" | "strong" | "em";
+  class?: string;
+}
+
+const { en, pt, as: Tag = "span", class: className } = Astro.props as Props;
+---
+
+<Tag class={className} data-en={en} data-pt={pt}>{en}</Tag>

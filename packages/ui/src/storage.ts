@@ -1,4 +1,4 @@
-/* Tiny localStorage wrapper — every read/write is guarded so a disabled or
+/* Tiny localStorage wrapper - every read/write is guarded so a disabled or
    full storage (Safari private mode, quota errors, …) never throws and
    breaks the app; callers just get a null read / silently-dropped write. */
 

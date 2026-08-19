@@ -1,0 +1,114 @@
+/* ============================================================
+   Page shell - the reading column and the gradient field beside it.
+   ============================================================
+
+   The layout no-tone.com and the dashboard both use: one column of content
+   with a gradient field pinned down the right, collapsing to a thin rail on
+   narrow screens. It lives here because it was written twice otherwise, and
+   the two copies had already started to disagree about their gutters.
+
+   What is *not* here: type scale, headings, lists, navigation. Those differ
+   between a portfolio and a launcher and should. This file owns the frame
+   and the measurements the frame implies - nothing that has an opinion about
+   what goes in it. */
+
+.shell {
+  --rail-w: 10px;
+  /* Wider than a sidebar: at this size the field is the other half of the
+     page rather than an accent stripe next to it. */
+  --field-w: clamp(360px, 40vw, 720px);
+  --gutter: clamp(24px, 5vw, 72px);
+  /* One measurement for running text, shared by body copy and the footer so
+     the two cannot drift apart. */
+  --body-size: clamp(1rem, 1.05vw, 1.0625rem);
+  /* The field's own framing, and deliberately not --gutter: that is the
+     *content's* margin, and they are not the same measurement. */
+  --field-inset: 12px;
+  --rail-inset: 8px;
+  min-height: 100svh;
+}
+
+/* A column the full height of the viewport, so a footer can be pushed to the
+   bottom of it. */
+.shell__reading {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  padding: var(--gutter);
+  /* Clear the fixed field rather than sharing a grid with it - a fixed
+     element is out of flow, so the column has to make its own room.
+
+     The field's inset, its width, then one gutter of clearance, so the space
+     between the text and the field matches the space to the left of the
+     text. */
+  padding-right: calc(var(--field-inset) + var(--field-w) + var(--gutter));
+}
+
+/* Fixed, not sticky: sticky is still in the document and rides the
+   overscroll bounce with it. Anchored to opposite edges so it tracks the
+   visual viewport and needs no height of its own. */
+.shell__fieldwrap {
+  position: fixed;
+  top: var(--field-inset);
+  right: var(--field-inset);
+  bottom: var(--field-inset);
+  width: var(--field-w);
+  display: flex;
+  z-index: 1;
+}
+
+.shell__field {
+  flex: 1;
+  border-radius: 14px;
+}
+
+/* Small and high: a logo's job on a page like this is to identify, not to
+   headline. Anything bigger competes with the actual heading. White, full
+   stop - not --text, which flips with the theme. */
+.shell__brand {
+  display: block;
+  width: clamp(104px, 9vw, 132px);
+  color: #fff;
+  margin-bottom: clamp(2rem, 4.5vw, 3rem);
+}
+
+.shell__brand:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 6px;
+}
+
+/* Narrow viewports: the field stops being a panel and becomes a scroll rail.
+   Stacking it above the text would cost half the screen to something that is
+   atmosphere, not content - and as a full-height strip it doubles as a
+   position indicator, because the ramp is already a function of scroll
+   progress. The component re-renders itself on resize, and because it takes
+   the box aspect into account the noise stays square rather than smearing
+   into stripes at 10px wide. */
+@media (max-width: 900px) {
+  .shell__reading {
+    padding-right: calc(var(--rail-inset) + var(--rail-w) + var(--gutter));
+  }
+
+  .shell__fieldwrap {
+    right: var(--rail-inset);
+    width: var(--rail-w);
+    /* Cancels any height the base layer set. Left in place it wins over
+       top/bottom and the rail overflows the viewport by its inset. With
+       height auto, a fixed element anchored top *and* bottom solves its own
+       height from those two edges. */
+    height: auto;
+    padding: 0;
+    /* Flex, not `height: 100%` on the child: a percentage height resolves
+       against the parent's *computed* height, which is `auto` here whatever
+       the used height works out to - so the panel collapsed instead of
+       filling the rail. flex:1 sizes from the used height and sidesteps it. */
+    display: flex;
+    z-index: 5;
+  }
+
+  .shell__field {
+    flex: 1;
+    height: auto;
+    border-radius: var(--radius-full);
+  }
+}

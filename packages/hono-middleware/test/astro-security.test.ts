@@ -74,7 +74,7 @@ describe("createAstroSecurityMiddleware", () => {
   });
 
   it("still applies headers even when next() returns a Response with immutable headers", async () => {
-    // Response.redirect() produces a Response whose headers throw on .set() —
+    // Response.redirect() produces a Response whose headers throw on .set() -
     // this is exactly the case the defensive `new Response(body, init)` copy
     // in the implementation exists for.
     const middleware = createAstroSecurityMiddleware();

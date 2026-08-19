@@ -1,7 +1,21 @@
 export {
   type CspReportSummary,
+  isSelfInflictedTransitionReport,
   summarizeCspReport,
 } from "./csp-report-summary";
+export {
+  BEST_AT,
+  type BestAt,
+  type CvLang,
+  EDUCATION,
+  type Education,
+  EXPERIENCE,
+  type Experience,
+  INTERESTS,
+  SKILLS,
+  type SkillGroup,
+  SPOKEN,
+} from "./cv";
 export {
   type GithubRepo,
   latestUpdateTimestamp,

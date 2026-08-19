@@ -1,0 +1,136 @@
+---
+// biome-ignore-all lint/correctness/noUnusedImports: used in the template
+// below the frontmatter fence, which Biome's Astro support doesn't analyze.
+// biome-ignore-all lint/correctness/noUnusedVariables: ditto.
+import {
+  BEST_AT,
+  EDUCATION,
+  EXPERIENCE,
+  INTERESTS,
+  SKILLS,
+  SPOKEN,
+} from "@repo/content";
+import T from "@repo/ui/site/T.astro";
+import SiteLayout from "../layouts/SiteLayout.astro";
+
+/* The same CV `ssh cv.no-tone.com` serves, from @repo/content.
+
+   Both languages are authored there, and both are rendered into the page -
+   the entries are zipped by index, which is safe because the two arrays are
+   authored as translations of each other and a missing counterpart would be
+   a content bug worth failing on rather than papering over. */
+function zip<T>(en: T[], pt: T[]): { en: T; pt: T }[] {
+  return en.map((entry, i) => {
+    const other = pt[i];
+    if (!other) {
+      throw new Error(`CV content is missing the Portuguese entry at ${i}`);
+    }
+    return { en: entry, pt: other };
+  });
+}
+
+const experience = zip(EXPERIENCE.en, EXPERIENCE.pt);
+const education = zip(EDUCATION.en, EDUCATION.pt);
+const skills = zip(SKILLS.en, SKILLS.pt);
+const bestAt = zip(BEST_AT.en, BEST_AT.pt);
+---
+
+<SiteLayout
+  title="cv · no-tone"
+  description="Experience, education and skills."
+  section="cv"
+  ramp="dusk"
+>
+  <h1 class="site__title"><T en="CV" pt="CV" /></h1>
+
+  <div class="site__body">
+    <p>
+      <T
+        en="Organisations are described by what they do rather than named. That is deliberate."
+        pt="As organizações são descritas pelo que fazem, em vez de nomeadas. É intencional."
+      />
+    </p>
+  </div>
+
+  <section class="cv">
+    <h2 class="cv__head"><T en="Experience" pt="Experiência" /></h2>
+    {
+      experience.map((entry) => (
+        <article class="cv__entry">
+          <h3 class="cv__role">
+            <T en={entry.en.role} pt={entry.pt.role} />
+          </h3>
+          <p class="cv__meta">
+            <T en={entry.en.org} pt={entry.pt.org} />
+            <span aria-hidden="true"> · </span>
+            <T en={entry.en.period} pt={entry.pt.period} />
+            <span aria-hidden="true"> · </span>
+            <T en={entry.en.place} pt={entry.pt.place} />
+          </p>
+          <ul class="cv__list">
+            {entry.en.bullets.map((bullet, i) => (
+              <li>
+                <T en={bullet} pt={entry.pt.bullets[i] ?? bullet} />
+              </li>
+            ))}
+          </ul>
+        </article>
+      ))
+    }
+
+    <h2 class="cv__head"><T en="Education" pt="Formação" /></h2>
+    {
+      education.map((entry) => (
+        <article class="cv__entry">
+          <h3 class="cv__role">
+            <T en={entry.en.title} pt={entry.pt.title} />
+          </h3>
+          <p class="cv__meta">
+            <T en={entry.en.period} pt={entry.pt.period} />
+          </p>
+          <ul class="cv__list">
+            {entry.en.bullets.map((bullet, i) => (
+              <li>
+                <T en={bullet} pt={entry.pt.bullets[i] ?? bullet} />
+              </li>
+            ))}
+          </ul>
+        </article>
+      ))
+    }
+
+    <h2 class="cv__head"><T en="Best at" pt="Melhor em" /></h2>
+    <dl class="cv__defs">
+      {
+        bestAt.map((entry) => (
+          <>
+            <dt>
+              <T en={entry.en.k} pt={entry.pt.k} />
+            </dt>
+            <dd>
+              <T en={entry.en.v} pt={entry.pt.v} />
+            </dd>
+          </>
+        ))
+      }
+    </dl>
+
+    <h2 class="cv__head"><T en="Skills" pt="Competências" /></h2>
+    <dl class="cv__defs">
+      {
+        skills.map((group) => (
+          <>
+            <dt>
+              <T en={group.en.label} pt={group.pt.label} />
+            </dt>
+            <dd>{group.en.items.join(", ")}</dd>
+          </>
+        ))
+      }
+      <dt><T en="languages spoken" pt="línguas" /></dt>
+      <dd><T en={SPOKEN.en.join(", ")} pt={SPOKEN.pt.join(", ")} /></dd>
+      <dt><T en="outside work" pt="fora do trabalho" /></dt>
+      <dd><T en={INTERESTS.en.join(", ")} pt={INTERESTS.pt.join(", ")} /></dd>
+    </dl>
+  </section>
+</SiteLayout>

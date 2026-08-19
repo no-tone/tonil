@@ -2,8 +2,8 @@ import { z } from "zod";
 
 /**
  * The `csp-report` object browsers POST per the CSP report-uri directive.
- * Every field is optional/nullable in practice — browsers vary in what they
- * populate — so this validates shape and types without rejecting reports
+ * Every field is optional/nullable in practice - browsers vary in what they
+ * populate - so this validates shape and types without rejecting reports
  * that are missing fields.
  */
 export const cspReportBodySchema = z.object({

@@ -25,14 +25,14 @@ export type AstroSecurityMiddleware = (
  *
  * Each app still writes its own `middleware.ts` for anything that isn't
  * shared (www-redirect, dev-robots, the RFC 9727 catalog, markdown
- * negotiation) — call this first, then layer that app-specific handling
+ * negotiation) - call this first, then layer that app-specific handling
  * around it, e.g.:
  *
  * ```ts
  * const security = createAstroSecurityMiddleware({ connectSrc: [...] });
  * export const onRequest: MiddlewareHandler = async (context, next) => {
  *   // app-specific short-circuits (redirects, dev-robots, etc.) here, using
- *   // context.locals.cspNonce if needed — call security(context, next) to
+ *   // context.locals.cspNonce if needed - call security(context, next) to
  *   // run the shared nonce+header logic around the rest.
  *   return security(context, next);
  * };
@@ -53,7 +53,7 @@ export function createAstroSecurityMiddleware(
     response.headers.delete("Content-Security-Policy-Report-Only");
 
     // HTML carries a per-request nonce, so it must never be served from a
-    // shared cache — a cached response's nonce won't match any subsequent
+    // shared cache - a cached response's nonce won't match any subsequent
     // request's freshly generated one.
     const contentType = response.headers.get("Content-Type") || "";
     if (contentType.startsWith("text/html")) {

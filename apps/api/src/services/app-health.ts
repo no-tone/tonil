@@ -39,12 +39,12 @@ interface AppHealth {
  * Self-hosted apps live on the tailnet: their DNS records are grey-clouded
  * straight to a Tailscale CGNAT address (100.64.0.0/10), which Cloudflare's
  * network can't route to. A Worker subrequest to one doesn't reach the origin
- * at all — Cloudflare's edge refuses it with its own 403 (verified: `server:
+ * at all - Cloudflare's edge refuses it with its own 403 (verified: `server:
  * cloudflare` + a cf-ray on the response), *whether the box is up or dead*.
  * Since 403 < 500, probeAppHealth read that as "up" and every tile showed
  * healthy even with the tailnet device offline for months.
  *
- * There's no probe that fixes this — the edge is simply not on the tailnet.
+ * There's no probe that fixes this - the edge is simply not on the tailnet.
  * So report "unknown" for these and let the two signals that CAN see them
  * decide (see apps/dashboard's status-resolution.ts): the Tailscale device
  * status from getTailnetDevice below, and the visitor's own browser ping,

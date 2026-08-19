@@ -14,7 +14,7 @@ function InfoPage({ site }: { site: SiteInfo }) {
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <title>{`${site.name} — info`}</title>
+        <title>{`${site.name} - info`}</title>
         <meta name="description" content={site.description} />
       </head>
       <body>
@@ -38,7 +38,7 @@ function InfoPage({ site }: { site: SiteInfo }) {
 export const infoRoute = new Hono<AppEnv>();
 
 // Agents that ask for `Accept: text/markdown` get the machine-readable page;
-// browsers (and anyone else) get the JSX-rendered HTML version — the same
+// browsers (and anyone else) get the JSX-rendered HTML version - the same
 // SiteInfo record backs both, so there's one source of truth per site.
 infoRoute.get("/:slug", (c) => {
   const site = SITES[c.req.param("slug")];

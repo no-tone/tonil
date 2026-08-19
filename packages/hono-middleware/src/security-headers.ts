@@ -12,7 +12,7 @@ export type SecurityHeadersOptions = Omit<
 /**
  * Sets a CSP nonce on the context (readable via c.get("cspNonce")) and, after
  * the handler runs, applies the full baseline security-header set + a nonce'd
- * CSP built by ./core's buildSecurityHeaders — the same logic Astro apps use
+ * CSP built by ./core's buildSecurityHeaders - the same logic Astro apps use
  * directly in their own middleware.ts.
  */
 export function securityHeaders(

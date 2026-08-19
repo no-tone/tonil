@@ -8,12 +8,44 @@ interface Props {
   description: string;
   image?: string;
   schema?: Record<string, unknown> | Array<Record<string, unknown>>;
-  /** Inlined, nonce'd stylesheet for the page. */
+  /**
+   * The page's stylesheet, inlined into a nonce'd <style>.
+   *
+   * Note the trade-off, because the original reason given for this was
+   * wrong: `style-src 'self' 'nonce-…'` allows a same-origin <link> just
+   * fine, so the nonce is not what forces inlining. What inlining buys is
+   * one fewer render-blocking request on a cold visit. What it costs is
+   * caching — the CSS travels with every document, and with view
+   * transitions each navigation fetches a document, so a visitor reading
+   * three pages downloads it three times. At roughly 7KB gzipped that is a
+   * fair trade for a site this size and a bad one as it grows.
+   */
   css?: string;
   /** Override the viewport meta (e.g. to opt into safe-area insets). */
   viewport?: string;
   /** Discovery link for an RSS feed, if this app has one. */
   rssTitle?: string;
+  /**
+   * The theme this page is designed for. Required.
+   *
+   * Every page in this repo is dark-only, so this used to read a stored
+   * preference and a visitor who had once chosen light got a dark-only
+   * design rendered white-on-white. Rather than keep a branch that can only
+   * produce that, the caller states what the page is and the answer is
+   * written before first paint. Making it required is the point: a new page
+   * cannot forget to decide.
+   */
+  theme: "dark" | "light";
+  /**
+   * The `robots` meta value.
+   *
+   * Defaults to indexable because most pages are. Private apps should say so
+   * here rather than rely on robots.txt: `Disallow` stops crawling, not
+   * indexing, so a blocked URL can still surface from an external link - and
+   * a page that says `index,follow` while its robots.txt says `Disallow: /`
+   * is telling two different stories.
+   */
+  robots?: string;
 }
 
 const {
@@ -26,6 +58,8 @@ const {
   css,
   viewport = "width=device-width,initial-scale=1",
   rssTitle,
+  theme,
+  robots = "index,follow",
 } = Astro.props as Props;
 const styleCss = css ?? "";
 const cspNonce = Astro.locals.cspNonce;
@@ -55,85 +89,20 @@ const resolvedSchema = [...defaultSchema, ...schemaItems];
 <!-- Global Metadata -->
 <meta charset="utf-8" />
 <meta name="viewport" content={viewport} />
-<link rel="icon" href="/favicon.ico" sizes="any" />
+
+<link rel="icon" href="/favicon.ico" sizes="32x32" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
-<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
-<link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 <meta name="generator" content={Astro.generator} />
-<meta name="robots" content="index,follow" />
+<meta name="robots" content={robots} />
 <style nonce={cspNonce} set:html={styleCss}></style>
 
-<!-- Theme bootstrap (runs before first paint) -->
-<script is:inline nonce={cspNonce}>
-  (() => {
-    const STORAGE_KEY = "theme";
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      const theme = stored === "light" || stored === "dark" ? stored : "dark";
-      document.documentElement.dataset.theme = theme;
-      if (stored !== theme) {
-        localStorage.setItem(STORAGE_KEY, theme);
-      }
-    } catch {
-      document.documentElement.dataset.theme = "dark";
-    }
-  })();
-</script>
+<script
+  is:inline
+  nonce={cspNonce}
+  set:html={`document.documentElement.dataset.theme=${JSON.stringify(theme)}`}
+/>
 
-<!-- Shared client theme helpers, namespaced under window.tonil -->
-<script is:inline nonce={cspNonce}>
-  (() => {
-    const root = (window.tonil ??= {});
-    const THEME_KEY = "theme";
-
-    root.getStoredTheme = () => {
-      try {
-        const value = localStorage.getItem(THEME_KEY);
-        return value === "light" || value === "dark" ? value : null;
-      } catch {
-        return null;
-      }
-    };
-
-    root.applyTheme = (theme) => {
-      document.documentElement.dataset.theme = theme;
-    };
-
-    root.readTheme = () =>
-      root.getStoredTheme() ??
-      (document.documentElement.dataset.theme === "dark" ? "dark" : "light");
-
-    root.syncTheme = (theme) => {
-      const resolved =
-        theme === "light" || theme === "dark" ? theme : root.readTheme();
-      root.applyTheme(resolved);
-      try {
-        localStorage.setItem(THEME_KEY, resolved);
-      } catch {
-        // no-op
-      }
-      return resolved;
-    };
-
-    root.setStoredTheme = (theme) => {
-      root.applyTheme(theme);
-      try {
-        localStorage.setItem(THEME_KEY, theme);
-      } catch {
-        // no-op
-      }
-      window.dispatchEvent(new CustomEvent("tonil:themechange", { detail: { theme } }));
-    };
-
-    window.addEventListener("tonil:themechange", (event) => {
-      if (!(event instanceof CustomEvent)) return;
-      root.syncTheme(event.detail?.theme);
-    });
-  })();
-</script>
-
-<!-- Canonical URL -->
 <link rel="canonical" href={canonicalHref} />
 <link rel="alternate" hreflang="en" href={canonicalHref} />
 <link rel="alternate" hreflang="x-default" href={canonicalHref} />
@@ -142,12 +111,10 @@ const resolvedSchema = [...defaultSchema, ...schemaItems];
   <link rel="alternate" type="application/rss+xml" title={rssTitle} href="/rss.xml" />
 )}
 
-<!-- Primary Meta Tags -->
 <title>{title}</title>
 <meta name="title" content={title} />
 <meta name="description" content={description} />
 
-<!-- Open Graph / Facebook -->
 <meta property="og:type" content="website" />
 <meta property="og:url" content={canonicalHref} />
 <meta property="og:title" content={title} />
@@ -158,7 +125,6 @@ const resolvedSchema = [...defaultSchema, ...schemaItems];
 {ogImageHeight && <meta property="og:image:height" content={ogImageHeight} />}
 <meta property="og:image:alt" content={`${siteName} preview`} />
 
-<!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:url" content={canonicalHref} />
 <meta name="twitter:title" content={title} />

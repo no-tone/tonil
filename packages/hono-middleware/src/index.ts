@@ -7,7 +7,7 @@ export {
   type CloudflareAccessOptions,
   requireCloudflareAccess,
 } from "./cloudflare-access";
-// NOTE: astro-security.ts is intentionally NOT re-exported here — it's the
+// NOTE: astro-security.ts is intentionally NOT re-exported here - it's the
 // one file in this package that's Astro-specific (types against Astro's
 // MiddlewareHandler + App.Locals), and this barrel is also imported by
 // apps/api, which has no Astro dependency at all. Astro apps import it via

@@ -4,14 +4,14 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./theme-bootstrap": "./src/theme-bootstrap.ts",
-    "./dom": "./src/dom.ts",
-    "./components": "./src/components.ts",
     "./storage": "./src/storage.ts",
+    "./gradient": "./src/gradient/index.ts",
+    "./motion/scroll-progress": "./src/motion/scroll-progress.ts",
+    "./site": "./src/site/index.ts",
     "./*": "./src/*"
   },
   "scripts": {
-    "check-types": "astro check",
+    "check-types": "astro check && tsc --noEmit",
     "test": "vitest run"
   },
   "devDependencies": {

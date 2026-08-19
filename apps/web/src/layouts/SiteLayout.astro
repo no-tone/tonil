@@ -1,0 +1,195 @@
+---
+// biome-ignore-all lint/correctness/noUnusedImports: used in the template
+// below the frontmatter fence, which Biome's Astro support doesn't analyze.
+// biome-ignore-all lint/correctness/noUnusedVariables: ditto.
+import { ClientRouter } from "astro:transitions";
+import BaseHead from "@repo/ui/BaseHead.astro";
+import Logo from "@repo/ui/brand/Logo.astro";
+import ContextMenu, {
+  type ContextMenuEntry,
+} from "@repo/ui/site/ContextMenu.astro";
+import Footer from "@repo/ui/site/Footer.astro";
+import brandCss from "@repo/ui/styles/brand.css?inline";
+import contextMenuCss from "@repo/ui/styles/context-menu.css?inline";
+import gradientCss from "@repo/ui/styles/gradient.css?inline";
+import resetCss from "@repo/ui/styles/reset.css?inline";
+import shellCss from "@repo/ui/styles/shell.css?inline";
+import siteFooterCss from "@repo/ui/styles/site-footer.css?inline";
+import tokensCss from "@repo/ui/styles/tokens.css?inline";
+import { SITE_NAME, SITE_URL } from "../consts";
+import siteCss from "../styles/site.css?inline";
+
+/**
+ * The site shell.
+ *
+ * These are real pages with real URLs, not tabs - /work is a document a
+ * crawler can index, a person can link to, and a browser can go back to. What
+ * makes it *feel* like a section swap is Astro's view transitions: the shell
+ * is shared, the field is marked `transition:persist` so its worker is never
+ * torn down, and only the panel actually changes. You get the SEO and the
+ * addressability of pages with the continuity of a single-page app, which is
+ * the combination worth having.
+ */
+interface Props {
+  title: string;
+  description: string;
+  /** Which ramp this route paints the field with. */
+  ramp?: string;
+  /** Route id, for the nav's active state. */
+  section: string;
+}
+
+const { title, description, ramp = "moss", section } = Astro.props as Props;
+
+const css = [
+  tokensCss,
+  resetCss,
+  shellCss,
+  gradientCss,
+  brandCss,
+  siteFooterCss,
+  contextMenuCss,
+  siteCss,
+].join("\n");
+
+/* Both languages per label, like every other string on the page - the nav
+   was the one thing still rendering a bare string, so mountLang walked past
+   it and the tabs stayed in English. */
+const SECTIONS = [
+  { id: "intro", en: "intro", pt: "início", href: "/" },
+  { id: "work", en: "work", pt: "trabalho", href: "/work" },
+  { id: "cv", en: "cv", pt: "cv", href: "/cv" },
+];
+
+const GITHUB = "https://github.com/no-tone";
+const EMAIL = "msg@no-tone.com";
+const DASHBOARD = "https://dash.no-tone.com";
+
+/* The right-click menu. Everything here is either somewhere to go or
+   something to put on the clipboard - see ContextMenu.astro for why that
+   ceiling is deliberate.
+
+   The link is the canonical URL rather than `location.href`, so sharing a
+   page never passes along whatever tracking parameters brought someone to
+   it. */
+const MENU: ContextMenuEntry[] = [
+  {
+    label: "copy link",
+    kind: "copy",
+    value: new URL(Astro.url.pathname, SITE_URL).href,
+  },
+  { label: "copy email", kind: "copy", value: EMAIL, hint: "mail" },
+  "separator",
+  {
+    label: "source",
+    kind: "link",
+    value: GITHUB,
+    hint: "github",
+    external: true,
+  },
+  "separator",
+  {
+    label: "log in",
+    kind: "link",
+    value: DASHBOARD,
+    hint: "dashboard",
+    external: true,
+  },
+];
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <BaseHead
+      siteName={SITE_NAME}
+      siteUrl={SITE_URL}
+      title={title}
+      description={description}
+      css={css}
+      theme="dark"
+    />
+    <ClientRouter />
+  </head>
+  <body data-ramp={ramp}>
+    <main class="site shell">
+      <div class="shell__reading">
+        <a class="shell__brand" href="/" aria-label="no-tone, home">
+          <Logo animate label="" />
+        </a>
+
+        <nav class="sitenav" aria-label="Sections">
+          {
+            SECTIONS.map((entry) => (
+              <a
+                class="sitenav__item"
+                href={entry.href}
+                data-section={entry.id}
+                aria-current={entry.id === section ? "page" : undefined}
+                data-en={entry.en}
+                data-pt={entry.pt}
+              >
+                {entry.en}
+              </a>
+            ))
+          }
+        </nav>
+
+        <div class="sitepanel">
+          <slot />
+        </div>
+
+        <Footer
+          github={GITHUB}
+          handle="@no-tone"
+          email={EMAIL}
+          links={[
+            {
+              label: "cv",
+              reveal: "ssh cv.no-tone.com",
+              describe: "Copy the command to read the CV over SSH",
+            },
+          ]}
+          lang
+        />
+      </div>
+
+      <div class="shell__fieldwrap" transition:persist="field">
+        <div class="shell__field" data-gradient-panel></div>
+      </div>
+    </main>
+
+    <ContextMenu entries={MENU} />
+
+    <script>
+      import {
+        mountContact,
+        mountContextMenu,
+        mountFilter,
+        mountLang,
+        preserveCspNonce,
+        syncField,
+      } from "@repo/ui/site";
+
+      const boot = () => {
+        // First, and before any navigation: it captures the nonce the CSP in
+        // force actually accepts, which only the initial document knows.
+        preserveCspNonce();
+        syncField();
+        mountContact();
+        mountContextMenu();
+        // A no-op on pages with nothing to filter; /work is the only one so
+        // far, and putting it here means a second such page needs no wiring.
+        mountFilter();
+        // Last: the document renders in English, so this is what turns it
+        // into the visitor's language. It has to run after every navigation,
+        // not just the first - the new page arrives in English too.
+        mountLang();
+      };
+
+      boot();
+      // Fires after every view transition, including the first load.
+      document.addEventListener("astro:page-load", boot);
+    </script>
+  </body>
+</html>

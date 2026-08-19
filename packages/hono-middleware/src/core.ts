@@ -34,10 +34,11 @@ export interface BuildSecurityHeadersOptions {
   nonce: string;
   devHostnames?: string[];
   connectSrc?: string[];
+  imgSrc?: string[];
   reportPath?: string;
   permissionsPolicy?: string;
   links?: string[];
-  /** @default "same-origin" — apps/api sets "cross-origin" since it's deliberately consumed by multiple frontend origins. */
+  /** @default "same-origin" - apps/api sets "cross-origin" since it's deliberately consumed by multiple frontend origins. */
   crossOriginResourcePolicy?: string;
 }
 
@@ -56,6 +57,7 @@ export function buildSecurityHeaders(
     options.devHostnames ?? ["localhost", "127.0.0.1"],
   );
   const connectSrc = ["'self'", ...(options.connectSrc ?? [])].join(" ");
+  const imgSrc = ["'self'", "data:", ...(options.imgSrc ?? [])].join(" ");
   const reportPath = options.reportPath ?? "/api/csp-report";
   const permissionsPolicy =
     options.permissionsPolicy ?? DEFAULT_PERMISSIONS_POLICY;
@@ -92,8 +94,15 @@ export function buildSecurityHeaders(
     "default-src 'none'",
     scriptSrc,
     styleSrc,
-    "img-src 'self' https: data:",
-    "font-src 'self' https: data:",
+    `img-src ${imgSrc}`,
+    // The gradient field runs its pixel loop in a module worker (see
+    // @repo/ui/gradient). Without this, worker-src falls back through
+    // child-src to script-src, which carries a nonce a worker URL can't
+    // satisfy - so state it directly rather than rely on the fallback.
+    "worker-src 'self'",
+    // Self-hosted woff2 only. `https:` here was left over from a Google
+    // Fonts dependency that no longer exists.
+    "font-src 'self'",
     `connect-src ${connectSrc}`,
     "frame-src 'self'",
     "frame-ancestors 'self'",

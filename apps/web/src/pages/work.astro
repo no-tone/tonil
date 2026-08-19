@@ -1,0 +1,126 @@
+---
+// biome-ignore-all lint/correctness/noUnusedImports: used in the template
+// below the frontmatter fence, which Biome's Astro support doesn't analyze.
+// biome-ignore-all lint/correctness/noUnusedVariables: ditto.
+import T from "@repo/ui/site/T.astro";
+import SiteLayout from "../layouts/SiteLayout.astro";
+import { loadProjects } from "../services/projects";
+
+const { repos, ok } = await loadProjects();
+
+// Languages present in the list, for the tag picker. Derived rather than
+// hardcoded so it can never offer a filter that matches nothing.
+const languages = [...new Set(repos.map((r) => r.language))].sort();
+
+// The API caches at the edge for 15 minutes; there is no reason for this
+// page to be fresher than its own data.
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, max-age=300, s-maxage=900",
+);
+---
+
+<SiteLayout
+  title="work · no-tone"
+  description="Public repositories, newest first."
+  section="work"
+  ramp="tealBlush"
+>
+  <h1 class="site__title"><T en="Work" pt="Trabalho" /></h1>
+
+  <div class="site__body">
+    <p>
+      <T
+        en="Everything public, newest first, straight from GitHub. Forks and archived repositories are left out."
+        pt="Tudo o que é público, do mais recente para o mais antigo, direto do GitHub. Forks e repositórios arquivados ficam de fora."
+      />
+    </p>
+  </div>
+
+  {
+    repos.length === 0 && (
+      <p class="work__note">
+        {ok ? (
+          <T
+            en="Nothing public to show at the moment."
+            pt="Nada público para mostrar de momento."
+          />
+        ) : (
+          <T
+            en="The project list is unavailable right now."
+            pt="A lista de projetos está indisponível neste momento."
+          />
+        )}{" "}
+        <a href="https://github.com/no-tone" rel="noopener">
+          github.com/no-tone
+        </a>
+      </p>
+    )
+  }
+
+  {
+    repos.length > 0 && (
+      <section class="workfilter" aria-label="Filter projects">
+        <label class="workfilter__field" for="q">
+          <span class="workfilter__label">
+            <T en="search" pt="procurar" />
+          </span>
+          <input
+            id="q"
+            name="q"
+            type="search"
+            autocomplete="off"
+            data-filter-search
+          />
+        </label>
+
+        <label class="workfilter__field workfilter__field--tag" for="lang">
+          <span class="workfilter__label">
+            <T en="language" pt="linguagem" />
+          </span>
+          <select id="lang" name="lang" data-filter-tag>
+            <option value="">
+              <T en="all" pt="todas" />
+            </option>
+            {languages.map((language) => (
+              <option value={language}>{language}</option>
+            ))}
+          </select>
+        </label>
+
+        <span class="workfilter__count" aria-live="polite" data-filter-count />
+      </section>
+    )
+  }
+
+  <p class="work__note" hidden data-filter-empty>
+    <T en="Nothing matches that." pt="Nada corresponde a isso." />
+  </p>
+
+  <ul class="work">
+    {
+      repos.map((repo) => (
+        <li
+          class="work__item"
+          data-filter-item
+          data-name={repo.name}
+          data-tags={[repo.language, ...repo.topics].join(",")}
+        >
+          <a class="work__name" href={repo.url} rel="noopener">
+            {repo.name}
+          </a>
+          {repo.description && <p class="work__desc">{repo.description}</p>}
+          <p class="work__meta">
+            <span class="work__lang">{repo.language}</span>
+            {repo.stars > 0 && <span class="work__stars">{repo.stars}★</span>}
+            {repo.homepage && (
+              <a class="work__live" href={repo.homepage} rel="noopener">
+                <T en="live" pt="site" />
+              </a>
+            )}
+          </p>
+        </li>
+      ))
+    }
+  </ul>
+</SiteLayout>

@@ -32,14 +32,29 @@ export function resolveTileStatus(input: ResolveTileStatusInput): TileStatus {
   return input.onTailnet ? "down" : "vpn";
 }
 
-/** Whether a browser ping is needed at all, given the signals already known. */
+/**
+ * Whether a browser ping is needed at all, given the signals already known.
+ *
+ * The `onTailnet` case is worth spelling out. A self-hosted app is only
+ * reachable from inside the tailnet, so when the visitor's own browser is not
+ * on it, the ping cannot succeed - and `resolveTileStatus` returns `vpn` for
+ * that combination whether `pingOk` is `false` or `null`. The request is
+ * therefore provably redundant, and skipping it is not a heuristic.
+ *
+ * It is also the difference between a clean console and eight
+ * `ERR_TUNNEL_CONNECTION_FAILED` lines per refresh: a failed connection is
+ * logged by the browser's network stack, and no amount of `try`/`catch`
+ * around `fetch` suppresses it. The only way not to see the error is not to
+ * make the request.
+ */
 export function needsPing(
   input: Pick<
     ResolveTileStatusInput,
-    "isSelfHosted" | "serverStatus" | "tailnetDeviceOnline"
+    "isSelfHosted" | "serverStatus" | "tailnetDeviceOnline" | "onTailnet"
   >,
 ): boolean {
   if (input.serverStatus === "up") return false;
   if (input.isSelfHosted && input.tailnetDeviceOnline === false) return false;
+  if (input.isSelfHosted && !input.onTailnet) return false;
   return true;
 }

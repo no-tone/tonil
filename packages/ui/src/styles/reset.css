@@ -1,8 +1,9 @@
 /* ============================================================
-   @repo/ui — shared base reset (app-agnostic; ported out of the
-   no-tone.com desktop UI's base.css, keeping only the rules that
-   apply to any app, not the single-page "desktop" layout specifics
-   like `overflow: hidden` on body).
+   Shared base reset: app-agnostic defaults only.
+
+   Anything that describes a particular page belongs in that app's
+   stylesheet. This is inlined into every document under the CSP nonce, so a
+   rule nobody uses is a rule every visitor downloads.
    ============================================================ */
 
 *,
@@ -15,10 +16,19 @@ html {
   scrollbar-color: var(--scrollbar) var(--bg);
   scrollbar-gutter: stable;
 }
-html,
-body {
-  height: 100%;
-}
+/* Deliberately NOT `html, body { height: 100% }`.
+
+   That rule is a single-page-app leftover, and it pins both boxes to the
+   viewport no matter how long the document is. Anything watching them for a
+   size change - here, the ResizeObserver behind scroll progress - therefore
+   never sees one, so after a view transition to a longer page the scrollable
+   range stayed whatever the previous page's was and the gradient field froze
+   part-way down. Letting the boxes size to their content is what makes the
+   observer work at all.
+
+   Nothing needs the old rule: full-height layouts use `min-height: 100svh`
+   (see @repo/ui/styles/shell.css), and body's background propagates to the
+   canvas regardless of its height. */
 body {
   margin: 0;
   padding: 0;
@@ -40,26 +50,11 @@ a:hover {
   color: var(--accent-hover);
 }
 
-code {
-  font-family: var(--font-mono);
-  padding: 2px 5px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-code);
-}
-html[data-theme="light"] code {
-  background: rgba(var(--vire-slate-rgb), 0.12);
-}
-
 img {
   max-width: 100%;
   height: auto;
   border-radius: var(--radius-img);
 }
-img.pixelated,
-.pixelated {
-  image-rendering: var(--img-pixelated);
-}
-
 ::selection {
   background: var(--selection-bg);
   color: var(--text-strong);
@@ -81,14 +76,6 @@ img.pixelated,
   background: transparent;
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
+input[type="search"]::-webkit-search-cancel-button {
+  cursor: pointer;
 }

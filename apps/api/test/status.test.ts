@@ -88,7 +88,7 @@ describe("GET /status", () => {
       tailnet: { device: unknown };
     };
     expect(body.apps.length).toBeGreaterThan(0);
-    // Tailnet-only apps are deliberately not probed — Cloudflare's edge can't
+    // Tailnet-only apps are deliberately not probed - Cloudflare's edge can't
     // route to their CGNAT addresses, so any probe result would be fiction
     // (see probeAllApps). Only genuinely public entries get a real verdict.
     const tailscale = body.apps.find((app) => app.name === "Tailscale");

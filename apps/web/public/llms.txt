@@ -1,12 +1,12 @@
 # no-tone
 
-> The desktop-style portfolio of a software engineer — a dark, monochrome
+> The desktop-style portfolio of a software engineer - a dark, monochrome
 > workspace navigated through an interactive dotted globe. Projects, CV and
 > about open as slide-over panels; contact and GitHub are direct links.
 
 ## Site
 
-- [Home](https://no-tone.com): the globe desktop — projects, cv, about, contact, github
+- [Home](https://no-tone.com): the globe desktop - projects, cv, about, contact, github
 - [Projects API](https://api.no-tone.com/projects): public GitHub repositories as JSON
 - [API catalog](https://no-tone.com/.well-known/api-catalog): machine-readable API index (RFC 9727)
 - [Sitemap](https://no-tone.com/sitemap.xml): all pages

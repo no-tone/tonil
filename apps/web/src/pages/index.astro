@@ -1,267 +1,36 @@
 ---
-// biome-ignore-all lint/correctness/noUnusedImports: these are used in the
-// template below the frontmatter fence, which Biome's Astro support doesn't analyze.
+// biome-ignore-all lint/correctness/noUnusedImports: used in the template
+// below the frontmatter fence, which Biome's Astro support doesn't analyze.
 // biome-ignore-all lint/correctness/noUnusedVariables: ditto.
-import BaseHead from "@repo/ui/BaseHead.astro";
-// Design system, split into modules and concatenated so BaseHead can inline
-// it under the CSP nonce (a single same-origin <style>, no external sheet).
-import componentsCss from "@repo/ui/styles/components.css?inline";
-import resetCss from "@repo/ui/styles/reset.css?inline";
-import tokensCss from "@repo/ui/styles/tokens.css?inline";
-import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "../consts";
-// Real content, server-rendered into a visually-hidden block so crawlers and
-// LLMs (which don't run the canvas app) still get the substance. Single source
-// of truth shared with the client panels.
-import {
-  BEST_AT,
-  EDUCATION,
-  EXPERIENCE,
-  FALLBACK_PROJECTS,
-  INTERESTS,
-  SKILLS,
-  SPOKEN,
-  STR,
-} from "../scripts/desktop/data";
-import baseCss from "../styles/desktop/base.css?inline";
-import chromeCss from "../styles/desktop/chrome.css?inline";
-import panelsCss from "../styles/desktop/panels.css?inline";
-import responsiveCss from "../styles/desktop/responsive.css?inline";
-
-const en = STR.en;
-const desktopCss = [
-  tokensCss,
-  resetCss,
-  baseCss,
-  componentsCss,
-  chromeCss,
-  panelsCss,
-  responsiveCss,
-].join("\n");
-
-const homeSchema = [
-  {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: SITE_TITLE,
-    url: SITE_URL,
-    description: SITE_DESCRIPTION,
-    about: [
-      "projects",
-      "GitHub repositories",
-      "curriculum vitae",
-      "software engineering",
-      "Cloudflare Workers",
-    ],
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "Person",
-    name: SITE_NAME,
-    url: SITE_URL,
-    sameAs: ["https://github.com/no-tone"],
-    knowsAbout: [
-      "Software engineering",
-      "Full-stack development",
-      "Cloudflare Workers",
-      "Privacy engineering",
-    ],
-  },
-];
-
-// Globe / rail navigation. `panel` nodes open the slide-over drawer;
-// `link` nodes go external. Labels are set (and localized) client-side.
-const NODES = [
-  { id: "projects", label: "projects", type: "panel" },
-  { id: "cv", label: "cv", type: "panel" },
-  { id: "about", label: "about", type: "panel" },
-  { id: "contact", label: "contact", type: "link" },
-  { id: "github", label: "github", type: "link" },
-];
+import T from "@repo/ui/site/T.astro";
+import { INTRO } from "../copy/intro";
+import SiteLayout from "../layouts/SiteLayout.astro";
 ---
 
-<!doctype html>
-<html lang="en" data-theme="dark">
-  <head>
-    <BaseHead
-      siteName={SITE_NAME}
-      siteUrl={SITE_URL}
-      title={SITE_TITLE}
-      description={SITE_DESCRIPTION}
-      schema={homeSchema}
-      css={desktopCss}
-      viewport="width=device-width, initial-scale=1, viewport-fit=cover"
-      rssTitle="RSS"
-    />
-    <!-- Hanken Grotesk (UI/body) + Yeseva One (display), self-hosted under
-         /fonts. @font-face is in the inlined (nonce'd) desktop CSS; preloading
-         the woff2 avoids a flash of fallback text. -->
-    <link
-      rel="preload"
-      href="/fonts/hanken-grotesk-var.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin="anonymous"
-    />
-    <link
-      rel="preload"
-      href="/fonts/yeseva-400.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin="anonymous"
-    />
-  </head>
-  <body>
-    <section class="sr-only">
-      <h1>no-tone — a desktop of tools, experiments and marks in the making</h1>
-      <p>no-tone {en.aboutLead} {en.cvLead}</p>
-      <p>{en.aboutP2}</p>
+<SiteLayout
+  title="home · no-tone"
+  description="Software engineer. Web applications end to end - front-end, API, and the infrastructure under them."
+  section="intro"
+  ramp="moss"
+>
+  <h1 class="site__title">
+    <T en="Hi, I'm no-tone." pt="Olá, sou o no-tone." />
+  </h1>
 
-      <h2>What I'm best at</h2>
-      <ul>
-        {BEST_AT.en.map((b) => <li>{b.k} — {b.v}</li>)}
-      </ul>
+  <div class="site__body">
+    {INTRO.map((p) => <T as="p" en={p.en} pt={p.pt} />)}
 
-      <h2>Stack and tools</h2>
-      <p>
-        Languages: {SKILLS.en.find((g) => g.label === "languages")?.items.join(", ")}.
-        Frameworks: {SKILLS.en.find((g) => g.label === "frameworks")?.items.join(", ")}.
-        Infrastructure: {SKILLS.en.find((g) => g.label === "infra")?.items.join(", ")}.
-      </p>
-
-      <h2>Experience</h2>
-      <ul>
-        {
-          EXPERIENCE.en.map((e) => (
-            <li>
-              {e.role}, {e.org} ({e.period}) — {e.bullets[0]}
-            </li>
-          ))
-        }
-      </ul>
-
-      <h2>Education</h2>
-      <ul>
-        {EDUCATION.en.map((e) => <li>{e.title} ({e.period})</li>)}
-      </ul>
-
-      <h2>Selected projects</h2>
-      <ul>
-        {
-          FALLBACK_PROJECTS.map((p) => (
-            <li>
-              <a href={p.url}>{p.name}</a> — {p.description}
-              {p.language ? ` (${p.language}${p.year ? `, ${p.year}` : ""})` : ""}
-            </li>
-          ))
-        }
-      </ul>
-
-      <h2>Languages and interests</h2>
-      <p>{SPOKEN.en.join(", ")}. Interests: {INTERESTS.en.join(", ")}.</p>
-
-      <h2>Contact</h2>
-      <ul>
-        <li><a href="https://github.com/no-tone">GitHub — github.com/no-tone</a></li>
-        <li><a href="mailto:msg@no-tone.com">Email — msg@no-tone.com</a></li>
-      </ul>
-    </section>
-
-    <main class="vk" aria-label="no-tone desktop">
-      <canvas class="vk-canvas" id="vk-canvas" aria-hidden="true"></canvas>
-
-      <!-- globe nodes: a decorative, non-focusable overlay (the rail below
-           is the real, keyboard-accessible nav), so aria-hidden here is safe -->
-      <div class="vk-nodes" id="vk-nodes" aria-hidden="true">
-        {
-          NODES.map((n) => (
-            <div class="vk-node" data-node={n.id} data-type={n.type}>
-              <span
-                class="vk-node__label"
-                data-i18n={n.id}
-                data-arrow={n.type === "link" ? "" : undefined}
-              >
-                {n.label}
-                {n.type === "link" ? " ↗" : ""}
-              </span>
-            </div>
-          ))
-        }
-      </div>
-
-      <!-- wordmark — click toggles theme -->
-      <button
-        class="vk-word"
-        id="vk-word"
-        type="button"
-        title="toggle theme"
-        aria-label="toggle theme"
-      >
-        no-tone<span class="vk-word__globe" aria-hidden="true"></span>
-      </button>
-
-      <!-- top chrome: coordinate readout + status -->
-      <div class="vk-top">
-        <div class="vk-coord" id="vk-coord" aria-hidden="true">
-          <div>X:<b id="vk-x">0000</b></div>
-          <div>Y:<b id="vk-y">0000</b></div>
-        </div>
-        <span class="vk-status">
-          <span class="vk-status__dot" aria-hidden="true"></span>
-          <span data-i18n="status">heads-down · building</span>
-        </span>
-      </div>
-
-      <!-- left index rail (mirrors globe nav) + signature swatches -->
-      <nav class="vk-rail" aria-label="index">
-        <span class="vk-rail__k" data-i18n="index">index</span>
-        <div class="vk-rail__nav">
-          {
-            NODES.map((n) => (
-              <button class="vk-rail__item" type="button" data-node={n.id} data-type={n.type}>
-                <span class="vk-rail__tick" aria-hidden="true" />
-                <span data-i18n={n.id} data-arrow={n.type === "link" ? "" : undefined}>
-                  {n.label}
-                  {n.type === "link" ? " ↗" : ""}
-                </span>
-              </button>
-            ))
-          }
-        </div>
-        <div class="vk-rail__sig">
-          <span class="vk-rail__k" data-i18n="signature">signature</span>
-          <div class="vk-swatches" id="vk-swatches"></div>
-        </div>
-      </nav>
-
-      <!-- bottom chrome: clocks + language toggle -->
-      <div class="vk-bottom">
-        <span class="vk-clock"
-          ><span data-i18n="cityLondon">london</span>
-          <b id="vk-clock-london">--:--</b></span
-        >
-        <div class="vk-lang" role="group" aria-label="language">
-          <button type="button" data-lang="en" class="is-on">en</button>
-          <span aria-hidden="true">/</span>
-          <button type="button" data-lang="pt">pt</button>
-        </div>
-        <a class="vk-clock vk-login" href="https://dash.no-tone.com" rel="noopener"
-          ><span data-i18n="login" data-arrow="">log in ↗</span></a
-        >
-      </div>
-
-      <!-- slide-over drawer -->
-      <div class="vk-drawer" id="vk-drawer">
-        <div class="vk-backdrop" id="vk-backdrop"></div>
-        <div class="vk-sheet" role="dialog" aria-modal="true" aria-label="panel">
-          <button class="vk-close" id="vk-close" type="button" aria-label="close">×</button>
-          <div class="vk-sheet__body" id="vk-sheet-body"></div>
-          <button class="vk-btt" id="vk-btt" type="button" aria-label="back to top">↑</button>
-        </div>
-      </div>
-    </main>
-
-    <script>
-      import "../scripts/desktop/main";
-    </script>
-  </body>
-</html>
+    <!--
+      Split rather than one <T>: the swap replaces textContent, so anything
+      with markup inside it has to be assembled from separate pieces. The
+      {" "} are load-bearing - JSX drops whitespace that spans a newline,
+      and without them the words run together.
+    -->
+    <p>
+      <T
+        en="If you want to talk about any of that, the address is at the bottom of this page."
+        pt="Se quiseres falar sobre alguma destas coisas, o endereço está no fim desta página."
+      />
+    </p>
+  </div>
+</SiteLayout>

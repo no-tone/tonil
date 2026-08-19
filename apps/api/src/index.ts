@@ -11,13 +11,14 @@ import type { AppEnv } from "./env";
 import { cspReportRoute } from "./routes/csp-report";
 import { infoRoute } from "./routes/info";
 import { projectsRoute } from "./routes/projects";
+import { sshRoute } from "./routes/ssh";
 import { statusRoute } from "./routes/status";
 
 const API_ORIGIN = "https://api.no-tone.com";
 
 // /projects is fetched client-side from no-tone.com's browser scripts, so it
 // needs real CORS. /status and /csp-report aren't browser cross-origin
-// fetches — status is proxied server-to-server by apps/dashboard (see its
+// fetches - status is proxied server-to-server by apps/dashboard (see its
 // api/status.ts), and csp-report is posted by the browser's own CSP
 // reporting mechanism, not application JS subject to CORS.
 const ALLOWED_ORIGINS = new Set([
@@ -25,12 +26,14 @@ const ALLOWED_ORIGINS = new Set([
   "https://www.no-tone.com",
 ]);
 const LOCAL_DEV_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+/** Hostnames this Worker is allowed to *be* when it honours a localhost origin. */
+const DEV_HOSTNAMES = new Set(["localhost", "127.0.0.1"]);
 
 const app = new Hono<AppEnv>();
 
 app.onError(problemJson());
 
-// onError only fires for *thrown* errors — an unmatched route goes to Hono's
+// onError only fires for *thrown* errors - an unmatched route goes to Hono's
 // default handler, which returns plain text. Without this, a 404 was the one
 // response that broke the API's own RFC 7807 contract.
 app.notFound((c) =>
@@ -45,14 +48,22 @@ app.notFound((c) =>
 app.use(
   "*",
   cors({
-    origin: (origin) => {
-      if (ALLOWED_ORIGINS.has(origin) || LOCAL_DEV_ORIGIN.test(origin)) {
-        return origin;
-      }
+    origin: (origin, c) => {
+      if (ALLOWED_ORIGINS.has(origin)) return origin;
+      // The localhost allowance is for running apps/web against this API
+      // locally, and it is gated on *this Worker* also being local. It used
+      // to be unconditional, which meant production api.no-tone.com replied
+      // `Access-Control-Allow-Origin: http://localhost:5173` to anything
+      // served from a visitor's own machine - a dev server, an Electron app,
+      // anything squatting a local port. Nothing here is credentialed, so the
+      // reach was small, but a production API has no reason to name localhost
+      // as trusted at all.
+      const isLocal = DEV_HOSTNAMES.has(new URL(c.req.url).hostname);
+      if (isLocal && LOCAL_DEV_ORIGIN.test(origin)) return origin;
       return null;
     },
     // Preflight otherwise advertises PUT/DELETE/PATCH, none of which exist
-    // here — POST is only for /csp-report.
+    // here - POST is only for /csp-report.
     allowMethods: ["GET", "HEAD", "POST", "OPTIONS"],
   }),
 );
@@ -64,7 +75,7 @@ app.use(
     connectSrc: ["https://api.github.com", "https://api.tailscale.com"],
     // This API is deliberately consumed cross-origin by every frontend in
     // the monorepo (unlike apps/web/apps/dashboard, which default to
-    // same-origin) — otherwise browsers block the response even with CORS
+    // same-origin) - otherwise browsers block the response even with CORS
     // headers present, independent of the CORS check above.
     crossOriginResourcePolicy: "cross-origin",
   }),
@@ -87,6 +98,12 @@ const ENDPOINTS = [
   },
 ];
 
+// Deliberately absent from ENDPOINTS: /ssh/authorize is a control-plane
+// endpoint for exactly one client (apps/ssh-cv), not a public API. Listing it
+// in the RFC 9727 catalog and on GET / would advertise its existence to
+// everyone, which is free reconnaissance for no benefit - the one caller is
+// configured with the URL.
+
 app.use("*", apiCatalog({ entries: ENDPOINTS.map(({ href }) => ({ href })) }));
 
 // A bare GET / used to 404. Cheaper to point a human (or agent) at what's
@@ -107,5 +124,6 @@ app.route("/projects", projectsRoute);
 app.route("/status", statusRoute);
 app.route("/csp-report", cspReportRoute);
 app.route("/info", infoRoute);
+app.route("/ssh", sshRoute);
 
 export default app;

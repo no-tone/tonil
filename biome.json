@@ -14,7 +14,9 @@
       "!build",
       "!**/.astro",
       "!**/.wrangler",
-      "!**/worker-configuration.d.ts"
+      "!**/worker-configuration.d.ts",
+      "!apps/ssh-cv/internal/cv/cv.json",
+      "!apps/ssh-cv/bin"
     ]
   },
   "formatter": {

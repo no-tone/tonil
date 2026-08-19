@@ -50,7 +50,7 @@ describe("GET /projects", () => {
     const res = await SELF.fetch("https://api.no-tone.com/projects", {
       headers: { Origin: "https://evil.example.com" },
     });
-    // The global cors() middleware doesn't reject the request outright — it
+    // The global cors() middleware doesn't reject the request outright - it
     // just withholds the header, which is what makes the browser (not this
     // server) block the response from being read cross-origin.
     expect(res.status).toBe(200);

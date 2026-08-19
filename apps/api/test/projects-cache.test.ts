@@ -31,7 +31,7 @@ describe("fetchProjects", () => {
     expect(first.cacheState).toBe("miss");
 
     // Now GitHub goes down. There's still whatever the edge Cache API kept
-    // (real, since these tests run in workerd via vitest-pool-workers) — to
+    // (real, since these tests run in workerd via vitest-pool-workers) - to
     // isolate the *memory* fallback specifically, this asserts the snapshot
     // it returns is at least the one we just saw, whichever fallback served it.
     vi.stubGlobal(

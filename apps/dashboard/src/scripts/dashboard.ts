@@ -1,18 +1,31 @@
 /**
  * Wires up the launcher page: collects the rendered app tiles, and connects
- * the pure logic in this directory (filter.ts, status-resolution.ts,
- * tailnet.ts, client-probe.ts, status-client.ts, theme.ts) to the actual DOM.
- * This module is intentionally "thin glue" — branching logic that's worth
+ * the pure logic in this directory (status-resolution.ts, tailnet.ts,
+ * client-probe.ts, status-client.ts) plus @repo/ui's shared filter to the
+ * actual DOM.
+ * This module is intentionally "thin glue" - branching logic that's worth
  * unit testing lives in the modules it imports, not here.
  */
+import { mountFilter } from "@repo/ui/site";
 import { pingUrl } from "./client-probe";
-import { matchesFilter } from "./filter";
 import { fetchServerStatuses } from "./status-client";
-import { resolveTileStatus, type TileStatus } from "./status-resolution";
+import {
+  needsPing,
+  resolveTileStatus,
+  type TileStatus,
+} from "./status-resolution";
 import { detectTailnetPresence } from "./tailnet";
-import { initThemeToggle } from "./theme";
 
 const STATUS_REFRESH_MS = 90_000;
+/**
+ * Floor between two status sweeps, however they were triggered.
+ *
+ * Returning to the tab used to re-run the whole check immediately, so
+ * flicking away and back fired a fresh round of probes against nine hosts
+ * for no new information. Statuses do not change on the timescale of an
+ * alt-tab.
+ */
+const STATUS_MIN_GAP_MS = 30_000;
 const STATUS_TIMEOUT_MS = 2500;
 const CLIENT_TIMEOUT_MS = 1200;
 const TAILNET_IP_TIMEOUT_MS = 700;
@@ -79,42 +92,13 @@ function cachedTailnetPresence(): Promise<boolean> {
 }
 
 export function initDashboard(): void {
-  const searchInput = document.getElementById("q") as HTMLInputElement | null;
-  const tagSelect = document.getElementById("tag") as HTMLSelectElement | null;
-  const countEl = document.getElementById("count");
-  const emptyEl = document.getElementById("empty");
+  // Search, tag and count are @repo/ui's now - the same control the work
+  // list uses. All this app supplies is the markup and which selectors mean
+  // what, which is exactly the amount of coupling that should exist.
+  mountFilter();
+
   const refreshBtn = document.getElementById("refresh");
-
-  initThemeToggle({
-    button: document.querySelector<HTMLButtonElement>(".topbar__toggle"),
-    icon: document.querySelector<HTMLElement>(".topbar__toggleIcon"),
-  });
-
   const tiles = collectTiles();
-
-  const applyFilter = () => {
-    const query = searchInput?.value ?? "";
-    const tag = tagSelect?.value ?? "";
-    let visible = 0;
-    for (const tile of tiles) {
-      const show = matchesFilter(tile, query, tag);
-      tile.el.hidden = !show;
-      if (show) visible++;
-    }
-    if (countEl) countEl.textContent = `${visible} / ${tiles.length}`;
-    if (emptyEl) emptyEl.hidden = visible !== 0;
-  };
-
-  searchInput?.addEventListener("input", applyFilter);
-  tagSelect?.addEventListener("change", applyFilter);
-  applyFilter();
-
-  window.addEventListener("keydown", (event) => {
-    if (event.key === "/" && document.activeElement !== searchInput) {
-      event.preventDefault();
-      searchInput?.focus();
-    }
-  });
 
   const checkStatuses = async () => {
     const visible = tiles.filter((tile) => !tile.el.hidden);
@@ -130,10 +114,14 @@ export function initDashboard(): void {
       visible.map(async (tile) => {
         const serverStatus = server.apps.get(tile.href);
         const tailnetDeviceOnline = server.tailnetDeviceOnline;
-        const pingRequired = !(
-          serverStatus === "up" ||
-          (tile.isSelfHosted && tailnetDeviceOnline === false)
-        );
+        // Shared with resolveTileStatus so the two cannot disagree about
+        // when a ping would tell us anything.
+        const pingRequired = needsPing({
+          isSelfHosted: tile.isSelfHosted,
+          serverStatus,
+          tailnetDeviceOnline,
+          onTailnet,
+        });
         const pingOk = pingRequired
           ? await pingUrl(
               tile.href,
@@ -156,9 +144,12 @@ export function initDashboard(): void {
   };
 
   let statusRunning = false;
-  const runStatusCheck = () => {
+  let lastCheckAt = 0;
+  const runStatusCheck = (force = false) => {
     if (statusRunning) return;
+    if (!force && Date.now() - lastCheckAt < STATUS_MIN_GAP_MS) return;
     statusRunning = true;
+    lastCheckAt = Date.now();
     checkStatuses().finally(() => {
       statusRunning = false;
     });
@@ -169,7 +160,9 @@ export function initDashboard(): void {
       refreshBtn.classList.remove("spinning");
       void refreshBtn.offsetWidth;
       refreshBtn.classList.add("spinning");
-      runStatusCheck();
+      // Explicitly asked for, so it skips the floor - that is what the
+      // button is for.
+      runStatusCheck(true);
     });
     refreshBtn.addEventListener("animationend", () =>
       refreshBtn.classList.remove("spinning"),
@@ -191,11 +184,13 @@ export function initDashboard(): void {
     if (document.hidden) {
       stopInterval();
     } else if (intervalId === null) {
+      // Not forced: coming back to the tab is not new information, and
+      // STATUS_MIN_GAP_MS decides whether enough time has passed.
       runStatusCheck();
       startInterval();
     }
   });
 
-  runStatusCheck();
+  runStatusCheck(true);
   startInterval();
 }

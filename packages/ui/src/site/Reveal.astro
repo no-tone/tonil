@@ -1,0 +1,61 @@
+---
+// biome-ignore-all lint/correctness/noUnusedVariables: used in the template
+// below the frontmatter fence, which Biome's Astro support doesn't analyze.
+/**
+ * A word that turns into the thing it names, then copies it.
+ *
+ * Reads `cv`, or `contact`, until you click it; then the value types itself
+ * out behind a terminal caret, and clicking again puts it on the clipboard.
+ * Two clicks, two different meanings, which is the point: the first is "show
+ * me" and the second is "give it to me".
+ *
+ * Used for the email address and for `ssh cv.no-tone.com`, and it suits both
+ * for the same reason - each is a string you would otherwise be told to type,
+ * so watching it appear a character at a time says more than printing it flat
+ * ever would. Keeping the value out of the page's rendered text also keeps it
+ * away from the naive harvesters, which is not a defence but is free.
+ *
+ * Inert without `mountContact()` from `@repo/ui/site`; the fallback is the
+ * collapsed label, which is a word, not a broken control.
+ */
+interface Props {
+  /** Shown until the first click. */
+  label: string;
+  /** Revealed, then copied. */
+  value: string;
+  /**
+   * Accessible name. Should carry the action *and* the value, so a screen
+   * reader never has to trigger the reveal to find out what the word means.
+   */
+  describe: string;
+}
+
+const { label, value, describe } = Astro.props as Props;
+---
+
+<!--
+  A button, not a link: nothing navigates, and the control does something on
+  this page. That is what a button is for.
+-->
+<button
+  class="reveal"
+  type="button"
+  data-copy={value}
+  aria-label={describe}
+>
+  <!--
+    Only one of these is ever in flow, so the control is exactly as wide as
+    what it is showing. It widens as the value types in, and the flexible
+    rule beside it gives up the space - the line retracting is the value
+    arriving.
+  -->
+  <span class="reveal__label" aria-hidden="true">{label}</span>
+  <span class="reveal__value" aria-hidden="true"
+    ><span data-typed></span><span class="reveal__caret"></span></span
+  >
+  <span
+    class="reveal__copied"
+    role="status"
+    aria-live="polite"
+    data-copied-badge></span>
+</button>

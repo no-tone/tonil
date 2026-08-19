@@ -1,0 +1,204 @@
+/* ============================================================
+   Site footer + contact - see src/site/Footer.astro
+   ============================================================ */
+
+.sitefoot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  /* Pushed to the bottom of a flex column, whatever the content above does.
+     On a long page it lands after the content; on a short one it lands on
+     the fold. Needs the parent to be that column - see .v2__reading. */
+  margin-top: auto;
+  padding-top: clamp(3rem, 8vw, 5rem);
+  /* Deliberately the same size as body copy, not a size below it. A footer
+     set smaller than the text above it reads as a legal disclaimer; these
+     are links someone is meant to use. Matches .v2__body p. */
+  font-size: var(--body-size, 1rem);
+  color: var(--text);
+}
+
+.sitefoot__link {
+  color: var(--text);
+  text-decoration: none;
+  text-underline-offset: 4px;
+  white-space: nowrap;
+}
+
+.sitefoot__link:hover,
+.sitefoot__link:focus-visible {
+  text-decoration: underline;
+}
+
+/* Rules stretch to fill whatever the labels leave, so the row always spans
+   the column instead of trailing off. */
+.sitefoot__rule {
+  flex: 0 1 2.5rem;
+  min-width: 0.5rem;
+  height: 1px;
+  background: var(--border);
+}
+
+.sitefoot__rule--grow {
+  flex: 1 0 2.5rem;
+}
+
+/* en / pt. Two buttons rather than a select: there are two options, and a
+   select would be a menu that opens to show one alternative. */
+.sitefoot__lang {
+  display: inline-flex;
+  gap: 0.6rem;
+}
+
+.sitefoot__langbtn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.9em;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.sitefoot__langbtn[aria-pressed="true"] {
+  color: var(--text);
+}
+
+.sitefoot__langbtn:hover,
+.sitefoot__langbtn:focus-visible {
+  color: var(--text);
+}
+
+/* Narrow screens: the rules are decoration, and decoration is the first
+   thing to go when the row has to wrap. Without this the footer wrapped
+   *around* its own hairlines, which reads as damage rather than as a
+   second line. */
+@media (max-width: 620px) {
+  .sitefoot {
+    gap: 0.6rem 1rem;
+  }
+
+  .sitefoot__rule {
+    display: none;
+  }
+}
+
+/* ---- reveal: a word that turns into a value - see src/site/Reveal.astro ----
+
+   Styled here rather than in a file of its own because the footer is the
+   only place it appears. Move it out the moment that stops being true; the
+   class names are already independent of the footer so the move is a cut and
+   paste rather than a rename. */
+
+/* Exactly as wide as whatever it is showing. A grid stack was tempting - it
+   holds the width steady - but a shared cell is always as wide as its widest
+   child, so the control sat at address width while reading "contact" and
+   left a hole in the row. Swapping the two in and out of flow instead lets
+   the rule beside it absorb the difference. */
+.reveal {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  /* Button, so it needs the browser's chrome taken off before it can sit in
+     a line of text as if it were one. */
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.reveal:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 4px;
+}
+
+.reveal__value {
+  display: none;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.94em;
+}
+
+/* Revealed by click only - see src/site/contact.ts. No hover rule: the
+   address should not be exposed by a mouse passing over it, and hover does
+   not exist on touch. */
+.reveal[data-revealed] .reveal__label {
+  display: none;
+}
+
+.reveal[data-revealed] .reveal__value {
+  display: inline-flex;
+}
+
+/* A terminal caret, because the address is the same one you would type. Step
+   timing so it snaps rather than fades. */
+.reveal__caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.05em;
+  margin-left: 0.15em;
+  background: var(--text);
+  vertical-align: text-bottom;
+  animation: reveal-blink 1.06s step-end infinite;
+}
+
+@keyframes reveal-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal__caret {
+    animation: none;
+  }
+}
+
+/* The confirmation is filled with the field's own colours: --field-ramp is
+   written every frame from the gradient currently on screen (see the
+   gradient's onFrame hook), so the chip is a literal slice of the thing
+   behind the page rather than a colour that merely coordinates with it.
+
+   The flat black layer on top is not a compromise, it is the reason this
+   works: the ramps run from a deep shade to a bright one, and no single ink
+   reads against both ends. Darkening the whole thing keeps the hue and the
+   direction of the gradient while making white text legible wherever the
+   field happens to be. Without a field running, --field-ramp is unset, the
+   image list collapses to `none`, and the surface colour underneath carries
+   the chip on its own - which is the dashboard's case. */
+.reveal__copied {
+  position: absolute;
+  bottom: calc(100% + 0.6rem);
+  right: 0;
+  padding: 0.35em 0.75em;
+  border: var(--bw) solid rgb(255 255 255 / 0.2);
+  border-radius: 3px;
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.55)),
+    var(--field-ramp, none);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: var(--text-2xs);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 160ms var(--ease),
+    transform 160ms var(--ease);
+  pointer-events: none;
+}
+
+.reveal[data-copied] .reveal__copied {
+  opacity: 1;
+  transform: translateY(0);
+}

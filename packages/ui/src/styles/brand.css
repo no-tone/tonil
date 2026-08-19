@@ -1,0 +1,85 @@
+/* ============================================================
+   no-tone wordmark - see src/brand/Logo.astro
+   ============================================================ */
+
+.ntl {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: currentColor;
+  overflow: visible;
+}
+
+/* The assemble animation: every letter starts collapsed onto the backslash
+   and slides out to its real position. `transform-box: fill-box` plus a
+   per-letter origin means each glyph scales from its own centre rather than
+   from the SVG's, which is what makes them look like they are unfolding from
+   the mark instead of sliding as a block.
+
+   Left-hand letters travel right-to-left and right-hand ones the reverse, so
+   the two halves separate outward from the backslash at the centre. */
+.ntl--animate .ntl__glyph {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ntl-unfold 620ms cubic-bezier(0.16, 0.84, 0.28, 1) forwards;
+}
+
+.ntl--animate .ntl__mark {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ntl-mark 480ms cubic-bezier(0.16, 0.84, 0.28, 1) backwards;
+}
+
+/* Stagger outward from the mark: the letters nearest the backslash move
+   first, so the wordmark reads as unfolding rather than as six things
+   arriving at once. */
+.ntl--animate [data-side="left"][data-index="1"],
+.ntl--animate [data-side="right"][data-index="3"] {
+  animation-delay: 120ms;
+}
+.ntl--animate [data-side="left"][data-index="0"],
+.ntl--animate [data-side="right"][data-index="4"] {
+  animation-delay: 190ms;
+}
+.ntl--animate [data-side="right"][data-index="5"] {
+  animation-delay: 260ms;
+}
+
+.ntl--animate [data-side="left"] {
+  --ntl-from: 340px;
+}
+.ntl--animate [data-side="right"] {
+  --ntl-from: -340px;
+}
+
+@keyframes ntl-unfold {
+  from {
+    opacity: 0;
+    transform: translateX(var(--ntl-from, 0)) scaleX(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scaleX(1);
+  }
+}
+
+@keyframes ntl-mark {
+  from {
+    transform: scaleY(0.2);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* Motion here is decoration, not information - the wordmark is legible
+   without it, so reduced-motion gets the finished state directly. */
+@media (prefers-reduced-motion: reduce) {
+  .ntl--animate .ntl__glyph,
+  .ntl--animate .ntl__mark {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

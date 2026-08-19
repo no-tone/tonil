@@ -1,0 +1,87 @@
+/* ============================================================
+   Not found - see each app's src/pages/404.astro
+   ============================================================
+
+   Shared because a 404 is the one page both properties are guaranteed to
+   show, and showing two different ones would say the two are unrelated
+   products. Only the palette differs, and that is passed to the field at
+   mount rather than being written here. */
+
+.notfound {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  padding: 12px;
+}
+
+/* Clips, so the digits are cut by the panel's rounded rectangle rather than
+   spilling onto bare page. Separate from the field itself because
+   mountNoiseGradient empties whatever element it is given. */
+.notfound__frame {
+  position: absolute;
+  inset: 12px;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.notfound__field {
+  position: absolute;
+  inset: 0;
+}
+
+/* Placed rather than sized: .shell__brand already owns the width and the
+   colour, and this only says where it sits on a page that has no column. */
+.notfound__brand {
+  position: absolute;
+  top: clamp(24px, 4vw, 56px);
+  left: clamp(24px, 4vw, 56px);
+  z-index: 2;
+  margin-bottom: 0;
+}
+
+.notfound__note {
+  position: absolute;
+  top: clamp(24px, 4vw, 56px);
+  right: clamp(24px, 4vw, 56px);
+  z-index: 2;
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+
+/* The glyphs overlap and rotate independently - the point is a shape you
+   read as "404" a beat after you read it as a composition, rather than a
+   number set neatly in the middle of the page.
+
+   Inside .notfound__field so the field's own overflow clips them: they run off
+   its left and bottom edges by design, and they should be cut by the panel,
+   not float past it onto the page. */
+.notfound__digits {
+  position: absolute;
+  z-index: 1;
+  left: -2%;
+  bottom: -3%;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+  font-size: clamp(9rem, 26vw, 24rem);
+  line-height: 0.78;
+  font-weight: var(--fw-regular);
+  color: var(--text);
+}
+
+.notfound__digit {
+  display: block;
+  transform-origin: 50% 80%;
+}
+
+.notfound__digit:nth-child(1) {
+  transform: rotate(-9deg) translateX(4%);
+}
+
+.notfound__digit:nth-child(2) {
+  transform: rotate(7deg) translate(-14%, -6%);
+}
+
+.notfound__digit:nth-child(3) {
+  transform: rotate(-3deg) translateX(-22%);
+}

@@ -1,5 +1,5 @@
 /* jsdom (as wired up by this Node/Bun toolchain) doesn't provide a working
-   `window.localStorage` out of the box — Node's own experimental global
+   `window.localStorage` out of the box - Node's own experimental global
    `localStorage` shadows jsdom's and requires CLI flags we don't want to
    force on every contributor. Install a tiny in-memory Storage-compatible
    polyfill instead, scoped to the test environment only. */

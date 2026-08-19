@@ -1,4 +1,16 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "ignoreDependencies": ["cloudflare", "hono"]
+  "ignoreDependencies": ["cloudflare", "hono"],
+  "workspaces": {
+    ".": {},
+    "apps/api": {},
+    "apps/dashboard": {},
+    "apps/web": {},
+    "packages/content": {},
+    "packages/hono-middleware": {},
+    "packages/typescript-config": {},
+    "packages/ui": {},
+    "packages/validation": {}
+  },
+  "ignoreBinaries": ["go", "gofmt"]
 }

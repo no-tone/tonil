@@ -19,6 +19,42 @@ describe("app-wide middleware", () => {
     ]);
   });
 
+  it("allows the site's own origin cross-origin", async () => {
+    const res = await SELF.fetch("https://api.no-tone.com/projects", {
+      headers: { Origin: "https://no-tone.com" },
+    });
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
+      "https://no-tone.com",
+    );
+  });
+
+  it("does not name localhost as a trusted origin in production", async () => {
+    // The localhost allowance exists so apps/web can run against this API
+    // locally. It used to be unconditional, so the deployed API answered
+    // `Access-Control-Allow-Origin: http://localhost:5173` to any page a
+    // visitor happened to be serving on their own machine.
+    const res = await SELF.fetch("https://api.no-tone.com/projects", {
+      headers: { Origin: "http://localhost:5173" },
+    });
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
+  });
+
+  it("still allows localhost when the worker itself is local", async () => {
+    const res = await SELF.fetch("http://localhost:8787/projects", {
+      headers: { Origin: "http://localhost:5173" },
+    });
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
+      "http://localhost:5173",
+    );
+  });
+
+  it("rejects an unrelated origin outright", async () => {
+    const res = await SELF.fetch("https://api.no-tone.com/projects", {
+      headers: { Origin: "https://not-no-tone.example" },
+    });
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
+  });
+
   it("applies the nonce'd CSP and baseline security headers to every response", async () => {
     const res = await SELF.fetch("https://api.no-tone.com/info/no-tone");
     const csp = res.headers.get("Content-Security-Policy") ?? "";

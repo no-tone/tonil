@@ -64,8 +64,8 @@ function toCacheEntry(html: string, etag: string | null): Response {
  * Whether `name` is one of the repos /projects actually lists.
  *
  * Without this, /projects/:name/readme is a rate-limit amplifier: a miss isn't
- * cacheable (there's no content to cache), so every distinct made-up name —
- * /projects/aaa1/readme, /aaa2/… — becomes its own uncached GitHub call, and a
+ * cacheable (there's no content to cache), so every distinct made-up name -
+ * /projects/aaa1/readme, /aaa2/… - becomes its own uncached GitHub call, and a
  * loop could drain the token's hourly budget and take /projects down with it.
  * The repo list is already cached by projects-cache, so this check is
  * effectively free and bounds us to real repos.
@@ -118,7 +118,7 @@ export async function fetchReadmeHtml(
     }
   }
 
-  // Checked only when we're actually about to call GitHub — an already-cached
+  // Checked only when we're actually about to call GitHub - an already-cached
   // README keeps being served even if the repo list is momentarily unavailable.
   if (!(await isKnownRepo(name, options.githubToken))) {
     return staleHtml === null
@@ -149,7 +149,7 @@ export async function fetchReadmeHtml(
       return { html: staleHtml, etag: staleEtag, cacheState: "revalidated" };
     }
 
-    // A repo with no README is a legitimate answer, not a failure — don't fall
+    // A repo with no README is a legitimate answer, not a failure - don't fall
     // back to a stale copy for it.
     if (upstream.status === 404) {
       return { html: null, etag: null, cacheState: "absent" };

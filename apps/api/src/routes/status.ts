@@ -12,7 +12,7 @@ const ACCESS_AUD =
   "28a3efd8f96a2e859f3bcd8158570e67538c297b25a8d7de9803b877e8a1881a";
 
 // Self-hosted app up/down + Tailscale device presence is only meant for the
-// dashboard, which is gated behind a Cloudflare Access policy — but that
+// dashboard, which is gated behind a Cloudflare Access policy - but that
 // policy lives on a different hostname (dash.no-tone.com), so it doesn't
 // automatically cover this route. apps/dashboard's own api/status.ts proxies
 // here server-to-server, forwarding the Cf-Access-Jwt-Assertion header

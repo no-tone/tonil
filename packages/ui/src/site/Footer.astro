@@ -1,0 +1,114 @@
+---
+// biome-ignore-all lint/correctness/noUnusedVariables: used in the template
+// below the frontmatter fence, which Biome's Astro support doesn't analyze.
+// biome-ignore-all lint/correctness/noUnusedImports: ditto.
+/**
+ * The footer, which is also the contact.
+ *
+ * Contact does not need a section. It needs an address and a way to copy it,
+ * and a whole page for one email is the kind of padding a portfolio does when
+ * it is trying to look bigger than it is.
+ *
+ * Nothing here is printed until asked for: see Reveal.astro, which both the
+ * address and the SSH command use.
+ *
+ * Lives in @repo/ui rather than in one app because both the site and the
+ * dashboard end on the same row: a handle, a rule, and a way to reach a
+ * person. Everything that differs between them is a prop.
+ *
+ * Pair it with `mountContact()` from `@repo/ui/site`; the markup is inert
+ * without it, and the fallback is a plain unrevealed label rather than a
+ * broken control.
+ */
+import Reveal from "./Reveal.astro";
+
+/**
+ * An entry between the handle and the contact control.
+ *
+ * Exactly one of `href` and `reveal` - navigate somewhere, or turn into a
+ * string you can copy. `cv` is the second kind: it names a command rather
+ * than a page.
+ */
+export interface FooterLink {
+  label: string;
+  href?: string;
+  reveal?: string;
+  /** Accessible name, required when `reveal` is set. */
+  describe?: string;
+}
+
+interface Props {
+  /** Where the handle points. */
+  github: string;
+  /** The handle as displayed, e.g. `@no-tone`. */
+  handle: string;
+  /** Address the contact control reveals and then copies. */
+  email: string;
+  /** Rendered between the handle and the contact control, each after a rule. */
+  links?: FooterLink[];
+  /** Show the en/pt switch. Off by default - the dashboard is English only. */
+  lang?: boolean;
+  class?: string;
+}
+
+const {
+  github,
+  handle,
+  email,
+  links = [],
+  lang = false,
+  class: className = "",
+} = Astro.props as Props;
+---
+
+<footer class={`sitefoot ${className}`.trim()}>
+  <a class="sitefoot__link" href={github} target="_blank" rel="noopener">
+    {handle}
+  </a>
+
+  {
+    links.map((link) => (
+      <>
+        <span class="sitefoot__rule" aria-hidden="true" />
+        {link.reveal ? (
+          <Reveal
+            label={link.label}
+            value={link.reveal}
+            describe={link.describe ?? `Copy ${link.reveal}`}
+          />
+        ) : (
+          <a class="sitefoot__link" href={link.href}>
+            {link.label}
+          </a>
+        )}
+      </>
+    ))
+  }
+
+  <span class="sitefoot__rule sitefoot__rule--grow" aria-hidden="true"></span>
+
+  {
+    /*
+      Chrome, not content, so it belongs down here with the other chrome.
+      aria-pressed rather than a link: nothing navigates - see
+      src/site/lang.ts for why both languages ship in one document.
+    */
+    lang && (
+      <span class="sitefoot__lang">
+        <button type="button" class="sitefoot__langbtn" data-lang-set="en" aria-pressed="true">
+          en
+        </button>
+        <button type="button" class="sitefoot__langbtn" data-lang-set="pt" aria-pressed="false">
+          pt
+        </button>
+      </span>
+      <span class="sitefoot__rule" aria-hidden="true" />
+    )
+  }
+
+  <Reveal
+    label="contact"
+    value={email}
+    describe={`Copy email address ${email}`}
+  />
+</footer>

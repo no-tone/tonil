@@ -1,0 +1,78 @@
+---
+// biome-ignore-all lint/correctness/noUnusedVariables: used in the template
+// below the frontmatter fence, which Biome's Astro support doesn't analyze.
+/**
+ * The markup for the custom right-click menu. See src/site/context-menu.ts
+ * for the behaviour, and for why overriding the native menu is defensible
+ * here at all.
+ *
+ * Items are data, not slots, and there are exactly two kinds: go somewhere,
+ * or put something on the clipboard. That is a deliberate ceiling - a menu
+ * that can run arbitrary callbacks becomes a place where app logic hides,
+ * and this one is meant to stay a shortcut list that two different apps can
+ * both fill in.
+ */
+export interface ContextMenuItem {
+  label: string;
+  /** `link` navigates to `value`; `copy` puts `value` on the clipboard. */
+  kind: "link" | "copy";
+  value: string;
+  /** Right-hand column - a domain, a command, a shortcut. */
+  hint?: string;
+  /** Open in a new tab. Only meaningful for `link`. */
+  external?: boolean;
+}
+
+/** A horizontal rule between groups. */
+export type ContextMenuEntry = ContextMenuItem | "separator";
+
+interface Props {
+  entries: ContextMenuEntry[];
+  /** Accessible name for the menu itself. */
+  label?: string;
+}
+
+const { entries, label = "Shortcuts" } = Astro.props as Props;
+---
+
+<div class="ctxmenu" role="menu" aria-label={label} hidden data-context-menu>
+  {
+    entries.map((entry) =>
+      entry === "separator" ? (
+        <div class="ctxmenu__sep" role="separator" />
+      ) : entry.kind === "link" ? (
+        <a
+          class="ctxmenu__item"
+          role="menuitem"
+          tabindex="-1"
+          href={entry.value}
+          target={entry.external ? "_blank" : undefined}
+          rel={entry.external ? "noopener" : undefined}
+        >
+          <span class="ctxmenu__label" data-ctx-label>
+            {entry.label}
+          </span>
+          {entry.hint && <span class="ctxmenu__hint">{entry.hint}</span>}
+          {entry.external && (
+            <span class="ctxmenu__out" aria-hidden="true">
+              ↗
+            </span>
+          )}
+        </a>
+      ) : (
+        <button
+          class="ctxmenu__item"
+          role="menuitem"
+          type="button"
+          tabindex="-1"
+          data-ctx-copy={entry.value}
+        >
+          <span class="ctxmenu__label" data-ctx-label>
+            {entry.label}
+          </span>
+          {entry.hint && <span class="ctxmenu__hint">{entry.hint}</span>}
+        </button>
+      ),
+    )
+  }
+</div>

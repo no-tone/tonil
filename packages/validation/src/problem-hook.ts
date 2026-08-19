@@ -14,8 +14,8 @@ type ZodValidatorHookResult =
 /**
  * A `@hono/zod-validator` failure hook that renders validation errors as an
  * RFC 7807 problem+json response instead of the library's default plain JSON
- * `{ success: false, error }` shape, so every 4xx from apps/api — validation
- * or otherwise — looks the same on the wire.
+ * `{ success: false, error }` shape, so every 4xx from apps/api - validation
+ * or otherwise - looks the same on the wire.
  */
 export function validationProblemHook(
   result: ZodValidatorHookResult,

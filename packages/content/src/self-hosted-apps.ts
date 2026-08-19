@@ -14,7 +14,7 @@ export interface SelfHostedApp {
   iconUrl: string;
 }
 
-/** Ported from main-menu's src/apps.ts — the registry apps/dashboard renders and apps/api's /status route probes. */
+/** Ported from main-menu's src/apps.ts - the registry apps/dashboard renders and apps/api's /status route probes. */
 export const SELF_HOSTED_APPS: SelfHostedApp[] = [
   {
     name: "Tailscale",
@@ -88,7 +88,7 @@ export const ALL_APP_TAGS: AppTag[] = Array.from(
 /**
  * Vaultwarden (pass.no-tone.com) serves an empty 200 at "/" behind auth walls
  * in some configs; probe its favicon instead. Shared by apps/api's
- * server-side health probe and apps/dashboard's client-side ping — they used
+ * server-side health probe and apps/dashboard's client-side ping - they used
  * to each hardcode this hostname check separately.
  */
 export function resolveProbePath(url: URL): string {

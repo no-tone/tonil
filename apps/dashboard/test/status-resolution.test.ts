@@ -98,6 +98,7 @@ describe("needsPing", () => {
         isSelfHosted: false,
         serverStatus: "up",
         tailnetDeviceOnline: null,
+        onTailnet: true,
       }),
     ).toBe(false);
   });
@@ -108,8 +109,24 @@ describe("needsPing", () => {
         isSelfHosted: true,
         serverStatus: "down",
         tailnetDeviceOnline: false,
+        onTailnet: true,
       }),
     ).toBe(false);
+  });
+
+  it("is false for a self-hosted app when the visitor is not on the tailnet", () => {
+    // The ping cannot reach a tailnet-only host from outside it, and
+    // resolveTileStatus answers `vpn` either way - so the request would only
+    // buy an ERR_TUNNEL_CONNECTION_FAILED in the console.
+    const input = {
+      isSelfHosted: true,
+      serverStatus: "down",
+      tailnetDeviceOnline: null,
+      onTailnet: false,
+    } as const;
+    expect(needsPing(input)).toBe(false);
+    expect(resolveTileStatus({ ...input, pingOk: null })).toBe("vpn");
+    expect(resolveTileStatus({ ...input, pingOk: false })).toBe("vpn");
   });
 
   it("is true otherwise", () => {
@@ -118,13 +135,17 @@ describe("needsPing", () => {
         isSelfHosted: true,
         serverStatus: "down",
         tailnetDeviceOnline: null,
+        onTailnet: true,
       }),
     ).toBe(true);
+    // A public app is reachable from anywhere, so the visitor's own tailnet
+    // membership says nothing about it.
     expect(
       needsPing({
         isSelfHosted: false,
         serverStatus: "down",
         tailnetDeviceOnline: null,
+        onTailnet: false,
       }),
     ).toBe(true);
   });

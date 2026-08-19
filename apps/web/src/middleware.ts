@@ -8,17 +8,16 @@ import type { MiddlewareHandler } from "astro";
 // @repo/hono-middleware directly. The nonce-generation + security-header
 // application shared with apps/dashboard lives in createAstroSecurityMiddleware
 // (@repo/hono-middleware/astro-security); everything below is specific to
-// this app — www-redirect, dev robots.txt, the RFC 9727 catalog, and
+// this app - www-redirect, dev robots.txt, the RFC 9727 catalog, and
 // markdown content-negotiation on the homepage.
 
 const DEV_HOSTNAME = "dev.no-tone.com";
 const DEV_ROBOTS_TXT = "User-agent: *\nDisallow: /\n";
 const DEV_ROBOTS_TAG = "noindex, nofollow, noarchive, nosnippet";
 const API_ORIGIN = "https://api.no-tone.com";
-// Centralized in apps/api now — this app no longer serves its own CSP-report
+// Centralized in apps/api now - this app no longer serves its own CSP-report
 // endpoint.
 const CSP_REPORT_URL = `${API_ORIGIN}/csp-report`;
-
 const API_CATALOG_BODY = buildApiCatalogBody([
   { href: `${API_ORIGIN}/projects` },
 ]);
@@ -30,14 +29,62 @@ const LINKS = [
 
 const security = createAstroSecurityMiddleware({
   devHostnames: ["localhost", "127.0.0.1"],
-  // api.no-tone.com only: scripts/desktop/data.ts fetches both /projects and
-  // per-repo READMEs from there client-side, cross-origin. api.github.com used
-  // to be listed for the README fetch, which now goes through apps/api instead
-  // (see fetchReadme) — nothing in this app talks to GitHub directly anymore.
+  // api.no-tone.com only. The project list is fetched *server-side* now (see
+  // services/projects.ts), so no page actually needs this at the moment -
+  // but the API is the one origin this site is ever expected to talk to, and
+  // naming it is cheaper than rediscovering why a fetch is being blocked.
   connectSrc: [API_ORIGIN],
   reportPath: CSP_REPORT_URL,
   links: LINKS,
 });
+
+/**
+ * Stamp the request nonce onto inline <style>/<script> tags that lack one.
+ *
+ * `<ClientRouter />` injects a stylesheet of its own for the view-transition
+ * animations, and Astro emits it without our nonce. Under the production CSP
+ * (`style-src \'self\' \'nonce-…\'`, no unsafe-inline) the browser refuses it,
+ * so page transitions lose their animations - and nothing says so in
+ * development, because dev serves \'unsafe-inline\'.
+ *
+ * Astro\'s own `security.csp` does not cover this: its documentation states
+ * that view transitions via ClientRouter are unsupported. Hard-coding the
+ * stylesheet\'s hash would work until the next Astro release changed a
+ * keyframe. Stamping the nonce is version-proof and applies to anything else
+ * Astro decides to inline later.
+ *
+ * HTMLRewriter is a Workers primitive and does not exist under `astro dev`,
+ * which is fine: dev serves \'unsafe-inline\', so there is nothing to fix
+ * there.
+ */
+function nonceInlineTags(response: Response, nonce?: string): Response {
+  if (!nonce || typeof HTMLRewriter === "undefined") return response;
+  if (!(response.headers.get("Content-Type") ?? "").includes("text/html")) {
+    return response;
+  }
+
+  // `:not([nonce])` would be the obvious selector, but HTMLRewriter supports
+  // only a subset of CSS and `:not()` is not in it - hence the check inside.
+  const stamp = {
+    element(element: {
+      getAttribute(n: string): string | null;
+      setAttribute(n: string, v: string): void;
+    }) {
+      if (element.getAttribute("nonce") === null) {
+        element.setAttribute("nonce", nonce);
+      }
+    },
+  };
+
+  return (
+    new HTMLRewriter()
+      .on("style", stamp)
+      // External scripts are already covered by \'self\'; this is for anything
+      // inline. Stamping a src\'d script too would be harmless but untrue.
+      .on("script", stamp)
+      .transform(response)
+  );
+}
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const requestUrl = new URL(context.request.url);
@@ -45,7 +92,33 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   if (requestUrl.hostname === "www.no-tone.com") {
     const target = new URL(requestUrl);
     target.hostname = "no-tone.com";
+    // Upgrade the scheme as well as the host. Copying the URL preserved
+    // whatever the request arrived on, so `http://www.no-tone.com/x`
+    // redirected to `http://no-tone.com/x` - a second plaintext round trip,
+    // and one that happens *before* HSTS is ever set on the apex, so a first
+    // visit had no protection at all. There is no reason to ever redirect to
+    // http from here.
+    target.protocol = "https:";
     return Response.redirect(target.toString(), 301);
+  }
+
+  // One canonical URL per page: /cv/ and /cv both used to answer 200 and each
+  // named itself canonical, which is textbook duplicate content.
+  //
+  // In production this rarely runs - Workers Assets normalises the trailing
+  // slash before the Worker is invoked at all (verified against a local
+  // `wrangler dev` build: a request to /nope/ came back 308 without reaching
+  // the www branch above it). It stays because `astro dev` has no assets
+  // layer, and a dev server that 200s a URL production redirects is how the
+  // difference goes unnoticed until it is live.
+  //
+  // Not `trailingSlash: "never"` in astro.config: that makes Astro refuse
+  // /cv/ outright, turning duplicate content into a 404 for anyone following
+  // an older link - including the ones the previous sitemap published.
+  if (requestUrl.pathname.length > 1 && requestUrl.pathname.endsWith("/")) {
+    const target = new URL(requestUrl);
+    target.pathname = requestUrl.pathname.replace(/\/+$/, "");
+    return Response.redirect(target.toString(), 308);
   }
 
   const isDevHost = requestUrl.hostname === DEV_HOSTNAME;
@@ -88,8 +161,9 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   }
 
   const response = await security(context, next);
+
   if (isDevHost) {
     response.headers.set("X-Robots-Tag", DEV_ROBOTS_TAG);
   }
-  return response;
+  return nonceInlineTags(response, context.locals.cspNonce);
 };

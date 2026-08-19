@@ -2,8 +2,8 @@
  * Client-side reachability probe for a single app tile, extracted from
  * main-menu's inline index.astro script. Mirrors apps/api's server-side
  * probe (src/services/app-health.ts's probeAppHealth) but runs in the
- * visitor's own browser via a no-cors fetch, since the browser — unlike the
- * Cloudflare Worker running apps/api — may itself be on the Tailscale network.
+ * visitor's own browser via a no-cors fetch, since the browser - unlike the
+ * Cloudflare Worker running apps/api - may itself be on the Tailscale network.
  */
 
 import { fetchWithTimeout, resolveProbePath } from "@repo/content";

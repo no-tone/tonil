@@ -1,5 +1,8 @@
 import { zValidator } from "@hono/zod-validator";
-import { summarizeCspReport } from "@repo/content";
+import {
+  isSelfInflictedTransitionReport,
+  summarizeCspReport,
+} from "@repo/content";
 import { problemDetails, problemResponse } from "@repo/hono-middleware";
 import { cspReportBodySchema, validationProblemHook } from "@repo/validation";
 import { Hono } from "hono";
@@ -12,7 +15,7 @@ const noCacheHeaders = {
   "X-Content-Type-Options": "nosniff",
 };
 
-// This is a public, unauthenticated POST — the only one on the API. Real CSP
+// This is a public, unauthenticated POST - the only one on the API. Real CSP
 // reports are a couple of KB at most, so cap the body well below that rather
 // than letting anyone stream arbitrary bytes into the Worker.
 const MAX_BODY_BYTES = 16 * 1024;
@@ -34,10 +37,15 @@ cspReportRoute.post(
   zValidator("json", cspReportBodySchema, validationProblemHook),
   (c) => {
     const body = c.req.valid("json");
-    console.warn(
-      "[csp-report]",
-      summarizeCspReport(JSON.stringify(body), new URL(c.req.url).pathname),
+    const summary = summarizeCspReport(
+      JSON.stringify(body),
+      new URL(c.req.url).pathname,
     );
+    // Still a 202 either way: the browser is not doing anything wrong, and
+    // an error here would only produce a second kind of noise.
+    if (!isSelfInflictedTransitionReport(summary)) {
+      console.warn("[csp-report]", summary);
+    }
     return c.body(JSON.stringify({ ok: true }), 202, noCacheHeaders);
   },
 );

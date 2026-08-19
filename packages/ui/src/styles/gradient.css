@@ -1,0 +1,37 @@
+/* ============================================================
+   Noise gradient field - see src/gradient/noise-gradient.ts
+
+   Only the parts that must be CSS live here. Everything positional
+   is set by the mount function; these rules cover the two things
+   the compositor has to know about: that the host clips, and that
+   the grain layer is a repeating tile blended over the canvas.
+   ============================================================ */
+
+.ntg {
+  position: relative;
+  isolation: isolate; /* keep the grain's blend inside this element */
+  overflow: hidden;
+}
+
+.ntg__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ntg__grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-repeat: repeat;
+  /* The tile is generated at exactly one noise pixel per device pixel;
+     any smoothing here would average it back into flat grey. */
+  image-rendering: pixelated;
+  mix-blend-mode: overlay;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .ntg__grain {
+    display: none;
+  }
+}

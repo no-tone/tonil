@@ -1,0 +1,16 @@
+{
+  "name": "@repo/ssh-cv",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "bun run scripts/generate-content.ts",
+    "build": "bun run generate && go build -o bin/ssh-cv .",
+    "check-types": "test -z \"$(gofmt -l .)\" || { gofmt -l .; echo \"^ run gofmt -w .\"; exit 1; }; go vet ./...",
+    "test": "go test ./...",
+    "dev": "bun run generate && go run . --addr localhost:2222"
+  },
+  "devDependencies": {
+    "@repo/content": "*"
+  }
+}

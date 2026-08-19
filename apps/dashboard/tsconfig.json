@@ -3,6 +3,7 @@
   "extends": "@repo/typescript-config/astro.json",
   "include": [".astro/types.d.ts", "**/*"],
   "exclude": ["dist"],
+  "//": "check-types here is `astro check` alone, unlike apps/web and packages/ui which also run `tsc --noEmit`. The `types` below pulls in Cloudflare's worker-configuration.d.ts, whose global `Element` (HTMLRewriter's) shadows the DOM one, so tsc rejects perfectly good browser code in @repo/ui. Separating worker types from browser types needs its own tsconfig; until then astro check is what runs.",
   "compilerOptions": {
     "types": ["./worker-configuration.d.ts"]
   }

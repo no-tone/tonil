@@ -5,19 +5,12 @@ import { defineConfig } from "astro/config";
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://dashboard.no-tone.com",
+  site: "https://dash.no-tone.com",
   output: "server",
-  image: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "cdn.jsdelivr.net",
-        pathname: "/gh/homarr-labs/dashboard-icons/**",
-      },
-    ],
-  },
   integrations: [],
-  adapter: cloudflare({
-    imageService: "compile",
-  }),
+  // No `image` config and no imageService override: nothing in this app uses
+  // astro:assets any more. The app icons are remote .webp files served by a
+  // CDN and are requested by the browser directly (see index.astro), so
+  // there is no image pipeline left to configure.
+  adapter: cloudflare(),
 });

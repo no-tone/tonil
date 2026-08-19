@@ -1,8 +1,9 @@
 import rss from "@astrojs/rss";
 import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
 
-// The site is a single-page desktop (projects / cv / about are panels, not
-// routes), so the feed carries one canonical entry rather than dead links.
+// One canonical entry. There is nothing to syndicate yet - no posts, no
+// changelog - so this is a discovery stub rather than a feed, and it should
+// either grow real items or be deleted rather than sit here forever.
 export async function GET(context) {
   return rss({
     title: SITE_TITLE,
@@ -11,8 +12,7 @@ export async function GET(context) {
     items: [
       {
         title: "no-tone",
-        description:
-          "The desktop-style portfolio of a software engineer — projects, cv, about and contact, navigated through an interactive dotted globe.",
+        description: "Software engineer. Work, CV and contact.",
         link: "/",
         pubDate: new Date("2026-07-12T00:00:00Z"),
       },
