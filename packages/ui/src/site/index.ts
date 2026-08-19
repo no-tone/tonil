@@ -7,7 +7,6 @@
 
 export { mountContact } from "./contact.js";
 export { mountContextMenu } from "./context-menu.js";
-export { preserveCspNonce } from "./csp-nonce.js";
 export { syncField } from "./field.js";
 export {
   type FilterableItem,

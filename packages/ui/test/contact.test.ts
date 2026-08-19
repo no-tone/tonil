@@ -6,15 +6,27 @@ import { mountContact } from "../src/site/contact.js";
    the effect, so the test waits rather than the code hurrying. */
 const TYPED_MS = 4000;
 
-/** The markup Footer.astro renders for the contact control. */
-function markup(email = "msg@no-tone.com"): HTMLButtonElement {
-  document.body.innerHTML = `
-    <button class="sitefoot__contact" type="button" data-copy="${email}"
-            aria-label="Copy email address ${email}">
-      <span class="sitefoot__label">contact</span>
-      <span class="sitefoot__mail"><span data-typed></span><span class="sitefoot__caret"></span></span>
-      <span class="sitefoot__copied" role="status" data-copied-badge></span>
+/* Reveal.astro's markup, class names included.
+
+   The classes are inert as far as mountContact is concerned - it binds on
+   [data-copy] and finds its parts by [data-typed] and [data-copied-badge] -
+   but the fixture had drifted to a set (`sitefoot__contact`, `sitefoot__mail`)
+   that no component has rendered since the control moved into Reveal.astro,
+   while still claiming in a comment to be what the footer renders. A fixture
+   that describes markup nobody emits tests the code against a page that does
+   not exist. */
+function control(label: string, value: string): string {
+  return `
+    <button class="reveal" type="button" data-copy="${value}"
+            aria-label="Copy ${value}">
+      <span class="reveal__label" aria-hidden="true">${label}</span>
+      <span class="reveal__value" aria-hidden="true"><span data-typed></span><span class="reveal__caret"></span></span>
+      <span class="reveal__copied" role="status" aria-live="polite" data-copied-badge></span>
     </button>`;
+}
+
+function markup(email = "msg@no-tone.com"): HTMLButtonElement {
+  document.body.innerHTML = control("contact", email);
   const el = document.querySelector<HTMLButtonElement>("[data-copy]");
   if (!el) throw new Error("fixture is missing the control");
   return el;
@@ -112,7 +124,8 @@ describe("mountContact", () => {
     });
 
     const el = markup();
-    // Called after every view transition, including the first load.
+    // Safe to call more than once per document by contract, so that a page
+    // which grows a second region of controls needs no bookkeeping.
     mountContact();
     mountContact();
     mountContact();
@@ -120,5 +133,36 @@ describe("mountContact", () => {
     el.click();
     el.click();
     expect(writeText).toHaveBeenCalledTimes(1);
+  });
+
+  /* The footer puts two of these on one line - `cv` and `contact` - and both
+     expand to something several times the width of their label. The row
+     absorbs one of them by letting its hairlines retract (see
+     site-footer.css), and below 620px the hairlines are hidden and there is
+     nothing to give at all. Two open at once ran off the screen.
+
+     So this is not a nicety, it is what makes that layout viable: the row
+     only ever has to fit one address. */
+  it("collapses any other revealed control when one is opened", async () => {
+    document.body.innerHTML =
+      control("cv", "ssh cv.no-tone.com") +
+      control("contact", "msg@no-tone.com");
+    const [cv, contact] = Array.from(
+      document.querySelectorAll<HTMLButtonElement>("[data-copy]"),
+    );
+    mountContact();
+
+    cv.click();
+    await vi.waitFor(
+      () => expect(typed()).toBe("ssh cv.no-tone.com"),
+      TYPED_MS,
+    );
+
+    contact.click();
+    expect(cv.dataset.revealed).toBeUndefined();
+    expect(contact.dataset.revealed).toBe("1");
+    // Not just collapsed - emptied. A hidden element still holding the
+    // address keeps it in the accessibility tree and in the page's text.
+    expect(cv.querySelector("[data-typed]")?.textContent).toBe("");
   });
 });

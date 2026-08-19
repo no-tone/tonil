@@ -11,13 +11,17 @@
   min-width: 208px;
   padding: 5px;
   border: var(--bw) solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--menu-radius);
   /* Translucent over a blur, so the menu reads as sitting *above* the page
      rather than cut out of it - the field keeps showing through, which is
-     the whole reason the page has one. */
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 18px 40px rgb(0 0 0 / 0.45);
+     the whole reason the page has one.
+
+     The surface is --menu-* rather than literal values because the filter's
+     dropdown wears it too now (styles/filter.css). Two menus that look
+     almost the same are worse than two that look different. */
+  background: var(--menu-bg);
+  backdrop-filter: var(--menu-blur);
+  box-shadow: var(--menu-shadow);
   font-size: var(--text-sm);
   user-select: none;
 }
@@ -47,7 +51,7 @@
   width: 100%;
   padding: 7px 10px;
   border: 0;
-  border-radius: 5px;
+  border-radius: var(--menu-item-radius);
   background: none;
   font: inherit;
   color: var(--text-muted);
@@ -58,7 +62,7 @@
 
 .ctxmenu__item:hover,
 .ctxmenu__item:focus-visible {
-  background: color-mix(in srgb, var(--text) 10%, transparent);
+  background: var(--menu-hover);
   color: var(--text);
   outline: none;
 }

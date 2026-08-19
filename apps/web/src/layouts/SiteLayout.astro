@@ -2,7 +2,6 @@
 // biome-ignore-all lint/correctness/noUnusedImports: used in the template
 // below the frontmatter fence, which Biome's Astro support doesn't analyze.
 // biome-ignore-all lint/correctness/noUnusedVariables: ditto.
-import { ClientRouter } from "astro:transitions";
 import BaseHead from "@repo/ui/BaseHead.astro";
 import Logo from "@repo/ui/brand/Logo.astro";
 import ContextMenu, {
@@ -11,11 +10,13 @@ import ContextMenu, {
 import Footer from "@repo/ui/site/Footer.astro";
 import brandCss from "@repo/ui/styles/brand.css?inline";
 import contextMenuCss from "@repo/ui/styles/context-menu.css?inline";
+import filterCss from "@repo/ui/styles/filter.css?inline";
 import gradientCss from "@repo/ui/styles/gradient.css?inline";
 import resetCss from "@repo/ui/styles/reset.css?inline";
 import shellCss from "@repo/ui/styles/shell.css?inline";
 import siteFooterCss from "@repo/ui/styles/site-footer.css?inline";
 import tokensCss from "@repo/ui/styles/tokens.css?inline";
+import viewTransitionCss from "@repo/ui/styles/view-transition.css?inline";
 import { SITE_NAME, SITE_URL } from "../consts";
 import siteCss from "../styles/site.css?inline";
 
@@ -24,11 +25,31 @@ import siteCss from "../styles/site.css?inline";
  *
  * These are real pages with real URLs, not tabs - /work is a document a
  * crawler can index, a person can link to, and a browser can go back to. What
- * makes it *feel* like a section swap is Astro's view transitions: the shell
- * is shared, the field is marked `transition:persist` so its worker is never
- * torn down, and only the panel actually changes. You get the SEO and the
- * addressability of pages with the continuity of a single-page app, which is
- * the combination worth having.
+ * makes it *feel* like a section swap is a cross-document view transition:
+ * the shell is identical either side of a navigation, the field is named so
+ * the browser carries it across, and only the panel visibly changes.
+ *
+ * This used Astro's `<ClientRouter />` and no longer does. Two reasons, and
+ * both were measured rather than argued:
+ *
+ * 1. CSP. ClientRouter navigates by fetching the next page and parsing it
+ *    with DOMParser, and a parsed document inherits the *creating* page's
+ *    policy - so the incoming <style> tags were checked against a nonce
+ *    minted for a different response and refused, twice per navigation, in
+ *    production only. See @repo/ui/styles/view-transition.css.
+ *
+ * 2. The 503s. ClientRouter prefetches on hover, and Cloudflare answers a
+ *    speculative request to a Worker-backed route with
+ *    `503` + `cf-speculation-refused: prefetch refused: disabled for worker
+ *    requests`. Every hover over a nav link logged a failed request. Nothing
+ *    in this repo can fix that from the inside; not asking is the fix.
+ *
+ * What was lost with it: the field's worker now restarts on each navigation
+ * instead of being kept alive by `transition:persist`. It costs one
+ * OffscreenCanvas handoff on a document that was already being parsed from
+ * scratch, and the cross-fade between the two fields is the palette change
+ * that used to be tweened in JavaScript - so the visible result is the same
+ * one, done by the browser.
  */
 interface Props {
   title: string;
@@ -44,11 +65,13 @@ const { title, description, ramp = "moss", section } = Astro.props as Props;
 const css = [
   tokensCss,
   resetCss,
+  viewTransitionCss,
   shellCss,
   gradientCss,
   brandCss,
   siteFooterCss,
   contextMenuCss,
+  filterCss,
   siteCss,
 ].join("\n");
 
@@ -109,7 +132,18 @@ const MENU: ContextMenuEntry[] = [
       css={css}
       theme="dark"
     />
-    <ClientRouter />
+    <!--
+      Hold the first paint until the field has been parsed, which is the last
+      element in <main> and therefore everything above it too.
+
+      Without this a cross-document transition starts the moment the new
+      document's <head> is ready, so the incoming snapshot is a half-built
+      page - the shell with an empty panel - and it animates *that* in before
+      the content lands. `rel="expect"` is the standards-track way to say
+      "this is when the page is ready", and if the id never appears the
+      browser releases the block when parsing ends rather than hanging.
+    -->
+    <link rel="expect" href="#field" blocking="render" />
   </head>
   <body data-ramp={ramp}>
     <main class="site shell">
@@ -154,7 +188,13 @@ const MENU: ContextMenuEntry[] = [
         />
       </div>
 
-      <div class="shell__fieldwrap" transition:persist="field">
+      <!--
+        The id is load-bearing twice over: it is what `rel="expect"` above
+        waits for, and shell.css gives this element a `view-transition-name`
+        so the browser carries the field across a navigation instead of
+        replacing it with the rest of the page.
+      -->
+      <div class="shell__fieldwrap" id="field">
         <div class="shell__field" data-gradient-panel></div>
       </div>
     </main>
@@ -167,29 +207,24 @@ const MENU: ContextMenuEntry[] = [
         mountContextMenu,
         mountFilter,
         mountLang,
-        preserveCspNonce,
         syncField,
       } from "@repo/ui/site";
 
-      const boot = () => {
-        // First, and before any navigation: it captures the nonce the CSP in
-        // force actually accepts, which only the initial document knows.
-        preserveCspNonce();
-        syncField();
-        mountContact();
-        mountContextMenu();
-        // A no-op on pages with nothing to filter; /work is the only one so
-        // far, and putting it here means a second such page needs no wiring.
-        mountFilter();
-        // Last: the document renders in English, so this is what turns it
-        // into the visitor's language. It has to run after every navigation,
-        // not just the first - the new page arrives in English too.
-        mountLang();
-      };
-
-      boot();
-      // Fires after every view transition, including the first load.
-      document.addEventListener("astro:page-load", boot);
+      // Runs once per document, which since the move off ClientRouter is also
+      // once per navigation - a real page load re-executes this module. There
+      // used to be an `astro:page-load` listener here re-running everything
+      // after each soft swap; with cross-document transitions the browser
+      // gives us a new document and a new module instance, so the listener
+      // would only ever have fired zero times.
+      syncField();
+      mountContact();
+      mountContextMenu();
+      // A no-op on pages with nothing to filter; /work is the only one so
+      // far, and putting it here means a second such page needs no wiring.
+      mountFilter();
+      // Last: the document renders in English, so this is what turns it into
+      // the visitor's language.
+      mountLang();
     </script>
   </body>
 </html>

@@ -29,19 +29,36 @@
 }
 
 /* A column the full height of the viewport, so a footer can be pushed to the
-   bottom of it. */
+   bottom of it.
+
+   Every edge is `--gutter` plus that edge's safe-area inset. The insets are
+   0 on anything without a display cutout, so this is one set of rules rather
+   than a phone-shaped special case - see tokens.css, and BaseHead.astro for
+   the `viewport-fit=cover` that makes them non-zero at all.
+
+   The bottom one is the one that matters. `100svh` is the viewport with the
+   browser's toolbars *shown*, so the footer lands on the fold correctly - but
+   on a phone the bottom of that viewport is also where the home indicator
+   is drawn, and `contact` was sitting underneath it. */
 .shell__reading {
   display: flex;
   flex-direction: column;
   min-height: 100svh;
-  padding: var(--gutter);
+  padding-top: calc(var(--gutter) + var(--safe-top));
+  padding-bottom: calc(var(--gutter) + var(--safe-bottom));
+  padding-left: calc(var(--gutter) + var(--safe-left));
   /* Clear the fixed field rather than sharing a grid with it - a fixed
      element is out of flow, so the column has to make its own room.
 
      The field's inset, its width, then one gutter of clearance, so the space
      between the text and the field matches the space to the left of the
      text. */
-  padding-right: calc(var(--field-inset) + var(--field-w) + var(--gutter));
+  padding-right: calc(
+    var(--field-inset) +
+    var(--field-w) +
+    var(--gutter) +
+    var(--safe-right)
+  );
 }
 
 /* Fixed, not sticky: sticky is still in the document and rides the
@@ -49,12 +66,18 @@
    visual viewport and needs no height of its own. */
 .shell__fieldwrap {
   position: fixed;
-  top: var(--field-inset);
-  right: var(--field-inset);
-  bottom: var(--field-inset);
+  top: calc(var(--field-inset) + var(--safe-top));
+  right: calc(var(--field-inset) + var(--safe-right));
+  bottom: calc(var(--field-inset) + var(--safe-bottom));
   width: var(--field-w);
   display: flex;
   z-index: 1;
+  /* Named so a cross-document view transition treats it as one thing that
+     persists across the navigation rather than as part of the page being
+     replaced. Old and new are the same box in the same place, so what
+     actually animates is the palette - which is the only thing that differs
+     between routes. See @repo/ui/styles/view-transition.css. */
+  view-transition-name: site-field;
 }
 
 .shell__field {
@@ -86,11 +109,16 @@
    into stripes at 10px wide. */
 @media (max-width: 900px) {
   .shell__reading {
-    padding-right: calc(var(--rail-inset) + var(--rail-w) + var(--gutter));
+    padding-right: calc(
+      var(--rail-inset) +
+      var(--rail-w) +
+      var(--gutter) +
+      var(--safe-right)
+    );
   }
 
   .shell__fieldwrap {
-    right: var(--rail-inset);
+    right: calc(var(--rail-inset) + var(--safe-right));
     width: var(--rail-w);
     /* Cancels any height the base layer set. Left in place it wins over
        top/bottom and the rail overflows the viewport by its inset. With

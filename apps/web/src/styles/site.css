@@ -214,48 +214,11 @@ body {
   color: var(--text-faint);
 }
 
-/* Underlines, not boxes: the list below is rows separated by hairlines, and
-   a bordered input in front of it reads as a different design arriving. */
-.workfilter input,
-.workfilter select {
-  min-width: 0;
-  flex: 1;
-  padding: 0.3rem 0;
-  border: 0;
-  border-bottom: 1px solid var(--border);
-  border-radius: 0;
-  background: none;
-  color: var(--text);
-  font: inherit;
-  font-size: 0.94em;
-}
-
-.workfilter input:focus,
-.workfilter select:focus {
-  outline: none;
-  border-bottom-color: var(--text);
-}
-
-.workfilter select {
-  appearance: none;
-  padding-right: 1.1rem;
-  background-image:
-    linear-gradient(45deg, transparent 50%, currentColor 50%),
-    linear-gradient(135deg, currentColor 50%, transparent 50%);
-  background-position:
-    right 0.42rem center,
-    right 0.15rem center;
-  background-size:
-    5px 5px,
-    5px 5px;
-  background-repeat: no-repeat;
-  cursor: pointer;
-}
-
-.workfilter select option {
-  background: var(--surface);
-  color: var(--text);
-}
+/* The controls themselves - underlines rather than boxes, and the tag
+   picker's dropdown - are in @repo/ui/styles/filter.css, keyed on the same
+   data attributes mountFilter() binds to. They were written out here and
+   again in the dashboard, which is how the two ended up with different
+   padding. What stays here is only where they sit. */
 
 .workfilter__count {
   font-family: var(--font-mono);
@@ -394,10 +357,45 @@ body {
   view-transition-name: nav-line;
 }
 
+/* ============================================================
+   View transitions
+   ============================================================
+
+   The at-rule that enables them is in @repo/ui/styles/view-transition.css;
+   what follows is this site's choreography.
+
+   Every rule here has to be present on the page being navigated *to*, not
+   the one being navigated from - the destination document is the one whose
+   styles the browser consults for the pseudo-elements. That is free here
+   because every page inlines this stylesheet, and it is the thing that
+   breaks first if that ever stops being true. */
+
 /* Leaves fast, arrives slow - the way a physical thing moves. */
 ::view-transition-group(nav-line) {
   animation-duration: 460ms;
   animation-timing-function: cubic-bezier(0.22, 0.92, 0.24, 1);
+}
+
+/* The field, named in shell.css. Old and new occupy the same box, so the
+   group does not move and the only visible change is one palette dissolving
+   into the next - which is exactly the cross-fade the gradient used to run
+   in JavaScript when the field survived the navigation. */
+::view-transition-old(site-field),
+::view-transition-new(site-field) {
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(0.16, 0.84, 0.28, 1);
+}
+
+/* What is left in `root` once the panel, the nav line and the field have
+   been lifted out is the shell: the wordmark, the nav labels, the footer.
+   Those are identical either side of a navigation, so cross-fading them is
+   work with nothing to show for it - and when the two pages were scrolled to
+   different offsets it is a visible smear of one page's text over another's.
+   Cutting straight is both cheaper and truer. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 
 /* The panel is the only thing that actually swaps. Naming it separately from

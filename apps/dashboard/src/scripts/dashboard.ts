@@ -26,8 +26,34 @@ const STATUS_REFRESH_MS = 90_000;
  * alt-tab.
  */
 const STATUS_MIN_GAP_MS = 30_000;
-const STATUS_TIMEOUT_MS = 2500;
+/**
+ * How long to wait for the server's view of everything.
+ *
+ * Longer than any single probe because it is not one: /api/status proxies to
+ * apps/api, which probes the public hosts and asks Tailscale about the box,
+ * so this number has to sit above that whole chain rather than above one
+ * request. At 2500ms it sat *below* it, and the result was not an error -
+ * it was `apps: []`, indistinguishable from "the server knows nothing",
+ * which is why the tiles still looked right (each falls back to its own
+ * browser probe) while the endpoint appeared to return an empty object.
+ *
+ * The chain is documented from the other end in apps/api's app-health.ts.
+ * The three numbers only work as a set; change one and read the other two.
+ */
+const STATUS_TIMEOUT_MS = 5000;
+/** A single probe from this browser, which is one hop and should be quick. */
 const CLIENT_TIMEOUT_MS = 1200;
+/**
+ * The same, for a host out on the public internet rather than on the tailnet.
+ *
+ * Its own constant rather than borrowing STATUS_TIMEOUT_MS, which it used to
+ * do back when the two happened to be equal. They are not the same kind of
+ * measurement - one bounds a browser's single request, the other bounds a
+ * three-hop server chain - and letting one number stand for both meant
+ * raising the chain's budget would have quietly doubled how long a tile sits
+ * on "checking".
+ */
+const PUBLIC_PING_TIMEOUT_MS = 2500;
 const TAILNET_IP_TIMEOUT_MS = 700;
 const TAILNET_IP_CACHE_MS = 30_000;
 
@@ -125,7 +151,7 @@ export function initDashboard(): void {
         const pingOk = pingRequired
           ? await pingUrl(
               tile.href,
-              tile.isSelfHosted ? CLIENT_TIMEOUT_MS : STATUS_TIMEOUT_MS,
+              tile.isSelfHosted ? CLIENT_TIMEOUT_MS : PUBLIC_PING_TIMEOUT_MS,
             )
           : null;
 

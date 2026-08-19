@@ -1,0 +1,177 @@
+/* ============================================================
+   Filter controls - the search box and the tag picker.
+   Behaviour: src/site/filter.ts. Layout: the app's own stylesheet.
+   ============================================================
+
+   Keyed on the same data attributes `mountFilter()` binds to rather than on
+   class names, because the markup contract is the part the two apps actually
+   share: `.workfilter__field` and `.dash__field` are two different layouts
+   wrapping the same two controls. The controls themselves were written twice
+   and had already started to disagree about their padding, which is the
+   usual way a shared design stops being shared.
+
+   So: the apps own where the controls sit and how much room they get. This
+   owns what they look like. */
+
+[data-filter-search],
+[data-filter-tag] {
+  min-width: 0;
+  flex: 1;
+  padding: 0.32rem 0;
+  border: 0;
+  /* Underlines, not boxes. Both lists below these controls are rows
+     separated by hairlines, and a bordered input in front of that reads as a
+     different design arriving. */
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.94em;
+}
+
+[data-filter-search]::placeholder {
+  color: var(--text-faint);
+}
+
+[data-filter-search]:focus,
+[data-filter-tag]:focus {
+  outline: none;
+  border-bottom-color: var(--text);
+}
+
+/* The X a browser puts inside a search field is a real control, so it should
+   say so on the way past. */
+[data-filter-search]::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+/* ---- the tag picker ---- */
+
+/* A native select paints its own rounded box, which is the one piece of
+   platform chrome loud enough to break a row of hairlines. Strip it and draw
+   the caret by hand - but keep the element. A real <select> is the
+   accessible thing; a div pretending to be one is not. */
+[data-filter-tag] {
+  appearance: none;
+  padding-right: 1.1rem;
+  /* Every label on this site is lowercase - `search`, `tag`, `all`, `intro`,
+     `work`, `cv`, `self-hosted`. The values in this list are not ours: they
+     come from GitHub's language names and the app registry's tags, both of
+     which capitalise, so the picker was the one control shouting next to its
+     own lowercase label.
+
+     Visual only. `select.value` is untouched, and that is what matchesFilter
+     compares against `data-tags`, so `Self-Hosted` still matches exactly as
+     it did. Inherited by the options too, which is how the open list and the
+     closed control stay in agreement. */
+  text-transform: lowercase;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    right 0.42rem center,
+    right 0.15rem center;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+/* The one thing `appearance: none` never reached: the list itself is an OS
+   popup drawn outside the page, so `option` accepted a colour and nothing
+   else. This is the floor for browsers that still work that way. */
+[data-filter-tag] option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* ---- and the list, where the browser will let us have it ----
+
+   `appearance: base-select` moves the popup into the page: the picker stops
+   being an OS widget and becomes a real element with a real box, which can
+   be given the same surface as the right-click menu. Both read the same
+   --menu-* tokens, so there is one definition of what a menu looks like on
+   this site rather than two that drift.
+
+   Behind @supports deliberately. Where it is not implemented the whole block
+   is skipped and the picker stays the OS dropdown, which is exactly what it
+   is today - so this is purely additive and no browser is left holding a
+   half-styled control. */
+@supports (appearance: base-select) {
+  [data-filter-tag],
+  [data-filter-tag]::picker(select) {
+    appearance: base-select;
+  }
+
+  [data-filter-tag] {
+    /* The hand-drawn caret was standing in for chrome we get back as a real
+       ::picker-icon here. Two carets is one too many. */
+    background-image: none;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-right: 0.2rem;
+    text-align: left;
+  }
+
+  [data-filter-tag]::picker-icon {
+    color: var(--text-faint);
+    transition: transform 140ms var(--ease);
+  }
+
+  [data-filter-tag]:open::picker-icon {
+    transform: rotate(180deg);
+  }
+
+  [data-filter-tag]::picker(select) {
+    min-width: 10rem;
+    margin-top: 6px;
+    padding: 5px;
+    border: var(--bw) solid var(--border);
+    border-radius: var(--menu-radius);
+    /* Translucent over a blur, so the list reads as sitting *above* the page
+       rather than cut out of it - the field keeps showing through, which is
+       the whole reason the page has one. */
+    background: var(--menu-bg);
+    backdrop-filter: var(--menu-blur);
+    box-shadow: var(--menu-shadow);
+  }
+
+  [data-filter-tag] option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: var(--menu-item-radius);
+    background: none;
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
+  [data-filter-tag] option:hover,
+  [data-filter-tag] option:focus {
+    background: var(--menu-hover);
+    color: var(--text);
+    outline: none;
+  }
+
+  [data-filter-tag] option:checked {
+    color: var(--text);
+  }
+
+  /* The tick the picker puts in front of the selected row indents every
+     option to make room for a mark only one of them ever shows. The row is
+     already the brighter one; that is enough. */
+  [data-filter-tag] option::checkmark {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-filter-tag]::picker-icon {
+      transition: none;
+    }
+  }
+}

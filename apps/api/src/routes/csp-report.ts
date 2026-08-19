@@ -1,8 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import {
-  isSelfInflictedTransitionReport,
-  summarizeCspReport,
-} from "@repo/content";
+import { summarizeCspReport } from "@repo/content";
 import { problemDetails, problemResponse } from "@repo/hono-middleware";
 import { cspReportBodySchema, validationProblemHook } from "@repo/validation";
 import { Hono } from "hono";
@@ -41,11 +38,15 @@ cspReportRoute.post(
       JSON.stringify(body),
       new URL(c.req.url).pathname,
     );
-    // Still a 202 either way: the browser is not doing anything wrong, and
-    // an error here would only produce a second kind of noise.
-    if (!isSelfInflictedTransitionReport(summary)) {
-      console.warn("[csp-report]", summary);
-    }
+    // Every report is logged again. The filter that used to sit here dropped
+    // the inline-style violations ClientRouter provoked on every navigation;
+    // the site no longer runs ClientRouter, so the only thing that filter
+    // could still catch is a real one. See @repo/content's
+    // csp-report-summary.ts.
+    console.warn("[csp-report]", summary);
+    // 202 whatever the report says: the browser is not doing anything wrong
+    // by sending it, and an error here would only produce a second kind of
+    // noise.
     return c.body(JSON.stringify({ ok: true }), 202, noCacheHeaders);
   },
 );

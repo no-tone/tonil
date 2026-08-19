@@ -83,7 +83,39 @@ real strict-CSP document, not inferred.
 The same applies to `<style nonce>` blocks: `BaseHead.astro` inlines the
 page's CSS with the request nonce, which is why every page passes its
 stylesheet down as a string rather than importing it into a `<style>` Astro
-would emit unnonced.
+would emit unnonced. `apps/web/src/middleware.ts` stamps the nonce onto
+anything Astro inlines that the templates did not, as a backstop.
+
+## Per-request nonces and soft navigation do not mix
+
+`apps/web` used Astro's `<ClientRouter />` and does not any more. The reason is
+structural rather than a bug anyone could fix:
+
+ClientRouter navigates by fetching the next page and parsing it with
+`DOMParser`. **A document created that way inherits the creating document's
+CSP**, so the incoming response's `<style nonce>` tags are judged against the
+nonce minted for the *previous* response, and never match. Two inline
+`style-src` violations per navigation, in production only - and the page then
+rendered perfectly, because the violation happens at parse time on a document
+that is never inserted.
+
+Things that do not fix it, all tried:
+
+- Restamping the parsed document's nonces before the swap. Measured: the
+  violation count stayed at exactly 2, because the block already happened
+  during `parseFromString`.
+- Astro's `security.csp`. Its own documentation says ClientRouter is
+  unsupported, for this reason.
+- A stable nonce across responses. That is not a nonce.
+
+The fix was to stop having two documents: `@view-transition { navigation:
+auto }` (`packages/ui/src/styles/view-transition.css`) gets the same animated
+navigation from the browser, on a real page load, where the policy in force is
+the one that arrived with the page.
+
+**So: with a per-request nonce, prefer browser-native cross-document view
+transitions over any router that fetches and parses HTML itself.** The
+constraint applies to anything with that shape, not just ClientRouter.
 
 ---
 

@@ -119,56 +119,11 @@ select {
   color: var(--text-faint);
 }
 
-/* Underlines rather than boxes. A launcher is mostly rows of text with a
-   hairline between them; a bordered input in the middle of that reads as a
-   different design arriving. */
-.dash__field input,
-.dash__field select {
-  min-width: 0;
-  flex: 1;
-  padding: 0.35rem 0;
-  border: 0;
-  border-bottom: 1px solid var(--border);
-  border-radius: 0;
-  background: none;
-  color: var(--text);
-}
-
-/* The native select paints its own rounded box, which is the one piece of
-   platform chrome loud enough to break the row of hairlines. Strip it and
-   draw the caret, but keep the element - a real <select> is the accessible
-   thing and a div pretending to be one is not. */
-.dash__field select {
-  appearance: none;
-  padding-right: 1.1rem;
-  background-image:
-    linear-gradient(45deg, transparent 50%, currentColor 50%),
-    linear-gradient(135deg, currentColor 50%, transparent 50%);
-  background-position:
-    right 0.42rem center,
-    right 0.15rem center;
-  background-size:
-    5px 5px,
-    5px 5px;
-  background-repeat: no-repeat;
-  color: var(--text);
-  cursor: pointer;
-}
-
-.dash__field select option {
-  background: var(--surface);
-  color: var(--text);
-}
-
-.dash__field input::placeholder {
-  color: var(--text-faint);
-}
-
-.dash__field input:focus,
-.dash__field select:focus {
-  outline: none;
-  border-bottom-color: var(--text);
-}
+/* The controls themselves - the underline, the caret, the dropdown - live in
+   @repo/ui/styles/filter.css now, keyed on the data attributes mountFilter()
+   binds to. They were written here and again in apps/web, which is how the
+   two ended up a hair apart on padding. This file keeps the layout: where
+   the controls sit and how much room each one gets. */
 
 .dash__count {
   font-family: var(--font-mono);

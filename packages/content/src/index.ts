@@ -1,6 +1,5 @@
 export {
   type CspReportSummary,
-  isSelfInflictedTransitionReport,
   summarizeCspReport,
 } from "./csp-report-summary";
 export {

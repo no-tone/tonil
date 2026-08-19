@@ -81,7 +81,32 @@
   --dur-fast: 120ms;
   --transition-border: border-color var(--dur-fast) var(--ease);
 
-  /* iOS safe-area inset, defaulted to 0 where unsupported */
+  /* The display's safe area, defaulted to 0 where there isn't one.
+
+     Only ever non-zero when the viewport meta says `viewport-fit=cover` -
+     see BaseHead.astro, which sets it. Without that the browser insets the
+     viewport itself and every one of these reads 0, so the same rules are
+     correct on a desktop, an old phone and a notched one.
+
+     Named rather than written inline because they show up in three places
+     that have to agree: the reading column's padding, the field's insets and
+     the footer's floor. `env()` inside a `calc()` inside a shorthand is easy
+     to get subtly wrong in one of three copies. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* A floating menu surface, shared by the right-click menu and the filter's
+     dropdown. Two menus that look almost the same are worse than one that
+     looks different, so the look is one definition and the two callers only
+     decide their own size and spacing. */
+  --menu-bg: color-mix(in srgb, var(--surface) 88%, transparent);
+  --menu-blur: blur(14px);
+  --menu-shadow: 0 18px 40px rgb(0 0 0 / 0.45);
+  --menu-radius: 8px;
+  --menu-item-radius: 5px;
+  --menu-hover: color-mix(in srgb, var(--text) 10%, transparent);
 }
 
 /* semantic - light (opt-in via [data-theme="light"]) */
@@ -102,4 +127,8 @@ html[data-theme="light"] {
   --selection-bg: color-mix(in srgb, var(--accent) 26%, transparent);
   --focus-ring: var(--accent);
   --scrollbar: var(--accent);
+
+  /* The dark shadow reads as a smudge on paper; menus on a light ground
+     want a shallower, tighter one. */
+  --menu-shadow: 0 14px 32px rgb(34 41 57 / 0.16);
 }

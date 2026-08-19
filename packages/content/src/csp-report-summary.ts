@@ -54,35 +54,15 @@ function malformedSummary(reportPath: string, size: number): CspReportSummary {
  * loggable summary - sanitizing origins/paths so we never log full querystrings
  * or credentials that might leak into a blocked-uri.
  */
-/**
- * A violation the site provokes against itself, which no operator can act on.
- *
- * Astro's `<ClientRouter />` fetches the next page and parses it with
- * DOMParser. A document created that way inherits the creating document's
- * CSP, so the *new* response's nonce is judged against the *old* response's
- * policy and never matches - one report per inline <style>, on every
- * navigation, in a page that then renders perfectly (the styles are
- * restamped before they are swapped in; see @repo/ui/site/csp-nonce.ts).
- *
- * These are dropped rather than logged. A report sink that is mostly
- * self-inflicted noise is one nobody reads, which costs more than the
- * reports are worth.
- *
- * Deliberately narrow: inline styles only, and only where the browser named
- * a source file. A genuine inline-style injection would report `blocked-uri:
- * inline` with no source file, and still comes through.
- */
-export function isSelfInflictedTransitionReport(
-  summary: CspReportSummary,
-): boolean {
-  const directive = summary.effectiveDirective ?? summary.violatedDirective;
-  return (
-    !summary.malformed &&
-    (directive === "style-src-elem" || directive === "style-src") &&
-    summary.blockedOrigin === "inline" &&
-    summary.sourceFilePath !== null
-  );
-}
+/* There used to be an `isSelfInflictedTransitionReport` filter here, dropping
+   the inline-style violations `<ClientRouter />` provoked on every navigation
+   by parsing the next page with DOMParser under this page's policy.
+
+   It went with ClientRouter. Keeping it would mean the sink silently swallows
+   every inline-style violation that names a source file - which, now that
+   nothing is generating them on purpose, is the shape a real one would take.
+   A filter written for a cause that no longer exists stops being noise
+   reduction and becomes a blind spot. */
 
 export function summarizeCspReport(
   body: string,

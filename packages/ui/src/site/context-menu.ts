@@ -200,9 +200,9 @@ export function mountContextMenu(root: ParentNode = document): void {
   if (!next) return;
   menu = next;
   menu.hidden = true;
-  // A navigation normally hands us a brand new element, but the same node
-  // surviving (transition:persist, a re-mount on the same page) must not
-  // stack a second handler on it.
+  // A navigation hands us a brand new element, but a re-mount on the same
+  // page hands us the one we already bound - and must not stack a second
+  // handler on it.
   if (!menu.dataset.ctxBound) {
     menu.dataset.ctxBound = "1";
     menu.addEventListener("click", onMenuClick);

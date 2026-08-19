@@ -9,14 +9,33 @@
   gap: 0.75rem 1.25rem;
   /* Pushed to the bottom of a flex column, whatever the content above does.
      On a long page it lands after the content; on a short one it lands on
-     the fold. Needs the parent to be that column - see .v2__reading. */
+     the fold. Needs the parent to be that column - see .shell__reading. */
   margin-top: auto;
   padding-top: clamp(3rem, 8vw, 5rem);
   /* Deliberately the same size as body copy, not a size below it. A footer
      set smaller than the text above it reads as a legal disclaimer; these
-     are links someone is meant to use. Matches .v2__body p. */
+     are links someone is meant to use. Matches .site__body p. */
   font-size: var(--body-size, 1rem);
   color: var(--text);
+}
+
+/* Rules stretch to fill whatever the labels leave, so the row always spans
+   the column instead of trailing off.
+
+   They are also the row's one flexible item, which is deliberate and is the
+   thing to leave alone: when a reveal expands from `contact` to a full
+   address, the width comes from here. The line retracting is the value
+   arriving. A layout that holds the rules rigid and absorbs the expansion
+   somewhere else is steadier and says nothing. */
+.sitefoot__rule {
+  flex: 0 1 2.5rem;
+  min-width: 0.5rem;
+  height: 1px;
+  background: var(--border);
+}
+
+.sitefoot__rule--grow {
+  flex: 1 0 2.5rem;
 }
 
 .sitefoot__link {
@@ -29,19 +48,6 @@
 .sitefoot__link:hover,
 .sitefoot__link:focus-visible {
   text-decoration: underline;
-}
-
-/* Rules stretch to fill whatever the labels leave, so the row always spans
-   the column instead of trailing off. */
-.sitefoot__rule {
-  flex: 0 1 2.5rem;
-  min-width: 0.5rem;
-  height: 1px;
-  background: var(--border);
-}
-
-.sitefoot__rule--grow {
-  flex: 1 0 2.5rem;
 }
 
 /* en / pt. Two buttons rather than a select: there are two options, and a
@@ -70,15 +76,57 @@
   color: var(--text);
 }
 
-/* Narrow screens: the rules are decoration, and decoration is the first
-   thing to go when the row has to wrap. Without this the footer wrapped
-   *around* its own hairlines, which reads as damage rather than as a
-   second line. */
+/* Narrow screens.
+
+   The rules used to be hidden outright here, and the reason was real: the row
+   wrapped *around* its own hairlines, and a line that ends in a stray dash
+   reads as damage rather than as a second line.
+
+   But that fixed the one case where the row is under pressure by removing the
+   rules from every case where it is not - and collapsed, at 390px, the whole
+   row fits on one line with space left over. So the rules stay, and step
+   aside only while a control is expanded, which is precisely when the room
+   runs out.
+
+   That is also the same behaviour the wide layout has, expressed in the only
+   way a phone-width row can. There the rules retract to hand over their
+   width; here there is nothing to retract into, so they leave.
+
+   `:has()` is the whole mechanism: nothing scripts this, the row simply knows
+   whether one of its own controls is open. Where it is unsupported the rules
+   stay put and a wrapped row ends in a short dash - the old behaviour, not a
+   broken one. */
 @media (max-width: 620px) {
   .sitefoot {
-    gap: 0.6rem 1rem;
+    gap: 0.6rem 0.7rem;
   }
 
+  /* Shorter, and free to shrink to almost nothing. At this width the
+     difference between the row fitting and the row wrapping is a handful of
+     pixels, and these are the pixels available to give. */
+  .sitefoot__rule {
+    flex: 0 1 0.6rem;
+    min-width: 0.3rem;
+  }
+
+  .sitefoot__rule--grow {
+    flex: 1 1 0.6rem;
+  }
+
+  .sitefoot:has([data-revealed]) .sitefoot__rule {
+    display: none;
+  }
+}
+
+/* Below the width where the row fits on one line even with everything
+   collapsed, the rules go for good - this is the original behaviour, just at
+   the width that actually needs it rather than at every phone.
+
+   360px is where the measurement lands: the row is `@no-tone`, `cv`, `en pt`
+   and `contact` against a column already narrowed by the field's rail, and
+   under that there is no arrangement of hairlines that does not end a line
+   with one. */
+@media (max-width: 359px) {
   .sitefoot__rule {
     display: none;
   }

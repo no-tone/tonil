@@ -41,21 +41,29 @@ const security = createAstroSecurityMiddleware({
 /**
  * Stamp the request nonce onto inline <style>/<script> tags that lack one.
  *
- * `<ClientRouter />` injects a stylesheet of its own for the view-transition
- * animations, and Astro emits it without our nonce. Under the production CSP
- * (`style-src \'self\' \'nonce-…\'`, no unsafe-inline) the browser refuses it,
- * so page transitions lose their animations - and nothing says so in
- * development, because dev serves \'unsafe-inline\'.
+ * A backstop, and deliberately kept as one after the thing it was written for
+ * went away. It arrived because `<ClientRouter />` injected an unnonced
+ * stylesheet for its transition animations; the site now uses browser-native
+ * cross-document transitions, which inject nothing, and every tag the
+ * templates emit already carries `Astro.locals.cspNonce` from BaseHead.
  *
- * Astro\'s own `security.csp` does not cover this: its documentation states
- * that view transitions via ClientRouter are unsupported. Hard-coding the
- * stylesheet\'s hash would work until the next Astro release changed a
- * keyframe. Stamping the nonce is version-proof and applies to anything else
- * Astro decides to inline later.
+ * What it still covers is everything Astro may decide to inline on its own -
+ * `build.inlineStylesheets` puts small component stylesheets in the document
+ * by default, so adding one `<style>` block to any .astro file three months
+ * from now would silently produce a page whose CSS the browser refuses. In
+ * production only: `astro dev` serves \'unsafe-inline\', so no local test can
+ * catch it. A pass over the response is a small price for a failure mode
+ * that is invisible until it is live.
+ *
+ * (Astro\'s own `security.csp` is the other way to solve this and is now
+ * *technically* available, since the documented reason it could not be used -
+ * ClientRouter - is gone. It stays unused: it emits a second policy in a
+ * <meta> tag, and two enforced policies intersect, so the effective rules
+ * would live in two places that have to be reasoned about together. One
+ * source of truth is worth more than one fewer HTMLRewriter pass.)
  *
  * HTMLRewriter is a Workers primitive and does not exist under `astro dev`,
- * which is fine: dev serves \'unsafe-inline\', so there is nothing to fix
- * there.
+ * which is fine for the same reason: dev serves \'unsafe-inline\'.
  */
 function nonceInlineTags(response: Response, nonce?: string): Response {
   if (!nonce || typeof HTMLRewriter === "undefined") return response;

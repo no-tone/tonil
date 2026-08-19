@@ -73,6 +73,57 @@ describe("loadProjects", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it("serves the stale list rather than waiting for the refresh", async () => {
+    /* The reason this matters is what the browser does while /work is being
+       rendered: a cross-document view transition keeps the *old* page on
+       screen until the new document arrives, with no spinner and no partial
+       paint. A reader cannot tell a slow upstream from a click that did
+       nothing, so once there is any list at all, the page must not wait for
+       a newer one. */
+    vi.stubGlobal("fetch", respondWith(ONE_REPO));
+    await loadProjects();
+
+    vi.advanceTimersByTime(16 * 60 * 1000);
+
+    // A refresh that never settles. If the stale path awaited it, this call
+    // would hang and the test would time out rather than fail.
+    let release: (() => void) | undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockReturnValue(
+        new Promise<Response>((resolve) => {
+          release = () =>
+            resolve({
+              ok: true,
+              json: async () => [{ ...ONE_REPO[0], name: "fresher" }],
+            } as unknown as Response);
+        }),
+      ),
+    );
+
+    const stale = await loadProjects();
+    expect(stale.repos.map((r) => r.name)).toEqual(["tonil"]);
+
+    // And when it does land, it replaces what is served from then on.
+    release?.();
+    await vi.waitFor(async () =>
+      expect((await loadProjects()).repos.map((r) => r.name)).toEqual([
+        "fresher",
+      ]),
+    );
+  });
+
+  it("does not stack refreshes when several requests arrive at once", async () => {
+    // Every navigation to /work calls this. A burst past the TTL should cost
+    // the API one request, not one per reader.
+    const fetchMock = respondWith(ONE_REPO);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await Promise.all([loadProjects(), loadProjects(), loadProjects()]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("does not cache a failure", async () => {
     // Otherwise one upstream blip costs every visitor the next fifteen
     // minutes of an empty page.

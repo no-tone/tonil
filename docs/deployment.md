@@ -63,6 +63,52 @@ Same as above, but for `apps.no-tone.com` (main-menu's current subdomain) → `d
 
 Once `no-tone.com`, `www.no-tone.com`, and the dashboard subdomain have all been serving from the new Workers without issues for a bit: delete the old `no-tone`, `main-menu`, and (if it's a separate Worker rather than a bare DNS redirect rule) `www` Workers from the Cloudflare dashboard. Keep the old `no-tone.com`/`main-menu` git repos around read-only for a while as a reference - no need to delete those.
 
+## Zone settings that are not in this repo
+
+Two Cloudflare toggles affect these Workers and live only in the dashboard, so
+nothing here can set or assert them. Both were found the same way - by looking
+at real response headers from production, not by reading docs.
+
+### Speed Brain: turn it off
+
+**Speed → Optimization → Content Optimization → Speed Brain.**
+
+Speed Brain injects a `Speculation-Rules` header pointing at
+`/cdn-cgi/speculation`, which asks the browser to prefetch links. It then
+refuses to serve the prefetch it just asked for:
+
+```console
+$ curl -sI -H 'Sec-Purpose: prefetch' https://no-tone.com/work
+HTTP/2 503
+cf-speculation-refused: prefetch refused: disabled for worker requests
+```
+
+Every route on this zone is a Worker route, so **it can never do anything but
+refuse.** What it produced instead was a `503` for every speculative request -
+which is where the `GET https://no-tone.com/work net::ERR_ABORTED 503` in the
+console came from, on hover, once per nav link, because Astro's ClientRouter
+prefetched on hover.
+
+The site no longer emits any prefetch hint of its own (ClientRouter is gone and
+Astro's `prefetch` is off), so the console is clean either way. Turning the
+setting off matters for the other half: with Speed Brain out of the way, a
+genuine `<link rel="prefetch">` or a `speculationrules` block would reach the
+Worker and actually work, which is worth having now that navigation is a real
+page load. Until then, do not add one - it will 503.
+
+### HTML is deliberately uncacheable
+
+Every HTML response carries `Cache-Control: private, max-age=0,
+must-revalidate` (`packages/hono-middleware/src/astro-security.ts`) because the
+document embeds a per-request CSP nonce. A shared cache handing a stored copy
+to a second visitor would be handing them a nonce their response's policy never
+allowed, and the page would render unstyled.
+
+This overrides anything a page sets for itself, so **do not add a
+`Cache-Control` in a page's frontmatter** - it is discarded one layer up and
+reads as a decision that was made when it was not. Cache the *data* instead,
+where it can actually be held (see `apps/web/src/services/projects.ts`).
+
 ## Ongoing deploys
 
 `.github/workflows/ci.yml` has a `deploy` job that runs after the `ci` job passes, on pushes to `main` only, and runs `wrangler deploy` for `apps/api`, `apps/web`, and `apps/dashboard` via `cloudflare/wrangler-action`. It authenticates with a `CLOUDFLARE_API_TOKEN` repository secret - create one at Cloudflare dashboard → My Profile → API Tokens → "Edit Cloudflare Workers" template scoped to this account, then add it as a secret at GitHub → repo Settings → Secrets and variables → Actions. Until that secret exists, the `deploy` job will fail (the `ci` job is unaffected). Merges to `main` that only touch one app still redeploy all three - cheap enough at this scale not to bother with path filtering.

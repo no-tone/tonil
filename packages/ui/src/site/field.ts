@@ -1,15 +1,20 @@
-/* One gradient field, shared across navigations - and across apps.
+/* One gradient field per document, and one implementation across apps.
 
-   The field element carries `transition:persist`, so Astro's view transitions
-   keep the DOM node across a page change - but the *scripts* on the new page
-   run again. Mounting a second time would spawn a second worker on top of a
-   canvas already owned by the first.
+   Each route declares its palette on `<body data-ramp>` and this reads it;
+   nothing else about the field varies between pages, which is deliberate.
+   It is the one element both properties share, and a per-page knob would be
+   an invitation for them to drift.
 
-   So the handle lives at module scope and mount is idempotent. Each route
-   declares its palette on `<body data-ramp>`; this reads it after every
-   navigation and cross-fades. The field never restarts, which is the whole
-   point: it should feel like the page changed *around* something continuous,
-   not like everything was thrown away and rebuilt. */
+   The handle lives at module scope and mounting is idempotent. Under
+   `<ClientRouter />` that was load-bearing - the element survived a
+   navigation via `transition:persist` while the scripts re-ran, so a second
+   mount would have put a second worker on a canvas the first already owned.
+   With cross-document view transitions each navigation brings a new document
+   and therefore a new module instance, so the mount branch is now the one
+   that runs and continuity is the browser's job: shell.css names the field
+   so the old and new frames cross-fade into each other. The guard stays
+   because "call this whenever the ramp might have changed" is the function's
+   contract, and a contract that only holds for the first call is a trap. */
 
 import {
   mountNoiseGradient,
@@ -89,16 +94,16 @@ export function syncField(): void {
         paintMark(profile);
       },
     });
-    // Never unsubscribed on purpose: the field is a page-lifetime singleton
-    // that survives every navigation, so the subscription should outlive them
-    // too. Tearing it down and re-adding it per route would be churn for a
-    // listener that is meant to be permanent.
+    // Never unsubscribed on purpose: the field lives as long as the document
+    // does, so the subscription should too, and the document is torn down
+    // wholesale on navigation.
     subscribeScrollProgress(({ progress }) => handle?.update({ progress }));
     return;
   }
 
-  // The shell is re-rendered on navigation, so last route's stop nodes are
-  // detached. Drop the cache and let the next frame re-resolve them.
+  // Already running, so this is a re-call within one document. Any wordmark
+  // this cache was pointing at may have been replaced since; drop it and let
+  // the next frame re-resolve.
   markStops = null;
   handle.update({ ramp: currentRamp() });
 }

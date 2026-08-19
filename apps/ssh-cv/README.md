@@ -113,18 +113,96 @@ repaint the viewer's terminal. Filenames matching a credential pattern
 seeing that a file exists while refusing its contents is more honest than
 pretending it is not there.
 
-## Running it
+## The wish SCP advisory
+
+`charmbracelet/wish` ships an SCP middleware with an unfixed path traversal.
+`fileSystemHandler.prefixed()` cleans the client's path, notices it does not
+already start with the configured root, and joins it to the root anyway - so
+`../../../etc/passwd` cleans to itself, joins to `/etc/passwd`, and is served.
+The same call sits behind the write and mkdir paths, and the filenames come off
+the SCP wire through a regex that accepts any string, so it reads *and* writes.
+
+**There is nothing to upgrade to.** The advisory covers everything through
+v1.4.7, which is the newest release `go list -m -versions
+github.com/charmbracelet/wish` offers, and names the patched version as none.
+The v2 line under `charm.land` carries the same code.
+
+**This server is not affected, and the reason is that it never registers the
+middleware.** Its middleware stack is `bubbletea`, `activeterm`, `logging` -
+there is no file-transfer handler, so there is nothing for a traversal to
+traverse. `activeterm` is a second, independent barrier: it rejects any session
+without a PTY, which is the shape every SCP session has.
 
 ```console
-# local, with a file instead of the API
+$ ssh -T -p 2222 localhost
+Requires an active PTY
+```
+
+Both of those are one edit away from stopping being true, and neither edit
+would fail to compile or look wrong in review. So `security_test.go` parses
+every `.go` file in the module and fails if a `wish/scp` import appears, with
+a second test asserting the scan actually reaches `main.go` - a walk that finds
+nothing proves nothing.
+
+If file transfer is ever genuinely wanted here, it does not arrive by deleting
+that test. It arrives by validating the resolved path against the root in our
+own handler, and by writing the advisory's traversal cases as tests that expect
+a refusal.
+
+## Running it
+
+Nothing here needs root, a tailnet, or the Oracle box. The CV is embedded in
+the binary and the allowlist is a text file, so the whole thing runs on a high
+port on your laptop:
+
+```console
+$ bun run dev
+```
+
+That is the whole command. It generates a throwaway host key, a client key
+whose comment grants the `dotfiles` scope, an `authorized_keys` holding it, and
+a handful of sample dotfiles - all under `.dev/`, which is gitignored - then
+starts the server and prints the line to paste into another terminal:
+
+```console
+$ ssh -p 2222 -i .dev/id_ed25519 localhost
+```
+
+Two sessions are worth opening, because the difference between them *is* the
+authorization model:
+
+```console
+$ ssh -p 2222 -i .dev/id_ed25519 localhost      # overview experience skills dotfiles
+$ ssh -p 2222 -o IdentitiesOnly=yes localhost   # overview experience skills
+```
+
+The second is what everyone else gets: the same CV, no fourth tab, and no
+locked door hinting that one exists.
+
+Point `DOTFILES_DIR` at a real checkout to browse that instead of the samples.
+One of the samples is called `id_ed25519` on purpose - the reader lists it and
+refuses to open it, and seeing that refusal is worth more than reading about it
+in the *Dotfiles safety* section above.
+
+### Running the binary directly
+
+`bun run dev` is a convenience, not the interface. The flags are:
+
+```console
+$ bun run build                       # regenerates cv.json, then go build
 $ ssh-keygen -t ed25519 -f /tmp/k -N "" -C "laptop dotfiles"
-$ cp /tmp/k.pub /tmp/authorized_keys
-$ bun run build
+$ cp /tmp/k.pub /tmp/authorized_keys  # the pub key line *is* the allowlist entry
 $ ./bin/ssh-cv --addr localhost:2222 \
+    --host-key /tmp/ssh_cv_host_ed25519 \
     --authorized-keys /tmp/authorized_keys \
     --dotfiles ~/dotfiles
-$ ssh -p 2222 localhost
 ```
+
+If you do, **pass `--host-key` somewhere disposable**. It defaults to
+`.ssh/ssh_cv_ed25519` *relative to the working directory* and is generated on
+first run, so running from the repo root and from `apps/ssh-cv/` produce two
+different server identities and your client warns about a changed host key.
+Production wants the opposite: one path, kept forever.
 
 ```console
 # production

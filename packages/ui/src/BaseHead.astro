@@ -1,6 +1,9 @@
 ---
 // biome-ignore-all lint/correctness/noUnusedVariables: these are used in the
 // template below the frontmatter fence, which Biome's Astro support doesn't analyze.
+// biome-ignore-all lint/correctness/noUnusedImports: ditto.
+import { FONT_HREF as fontHref } from "./fonts.js";
+
 interface Props {
   siteName: string;
   siteUrl: string;
@@ -21,7 +24,18 @@ interface Props {
    * fair trade for a site this size and a bad one as it grows.
    */
   css?: string;
-  /** Override the viewport meta (e.g. to opt into safe-area insets). */
+  /**
+   * Override the viewport meta.
+   *
+   * The default opts into `viewport-fit=cover`, which is what makes
+   * `env(safe-area-inset-*)` report anything other than 0. Without it the
+   * browser insets the viewport itself and the page simply never reaches the
+   * rounded corners or the home indicator - safe, but it also means a
+   * full-bleed gradient stops short of the edge on exactly the devices where
+   * running to the edge is the point. With it, the layout takes
+   * responsibility for its own margins (see shell.css, which adds each
+   * inset to its gutter).
+   */
   viewport?: string;
   /** Discovery link for an RSS feed, if this app has one. */
   rssTitle?: string;
@@ -56,7 +70,7 @@ const {
   image = "/images/meta/og.png",
   schema,
   css,
-  viewport = "width=device-width,initial-scale=1",
+  viewport = "width=device-width,initial-scale=1,viewport-fit=cover",
   rssTitle,
   theme,
   robots = "index,follow",
@@ -89,6 +103,37 @@ const resolvedSchema = [...defaultSchema, ...schemaItems];
 <!-- Global Metadata -->
 <meta charset="utf-8" />
 <meta name="viewport" content={viewport} />
+
+<!--
+  Before the stylesheet, because it is the stylesheet that will ask for this
+  and by then it is too late.
+
+  styles/tokens.css declares the face `font-display: optional`, which gives
+  the file one short window to arrive and then commits: miss it and the page
+  keeps the fallback for the rest of its life, with no swap. That is the
+  right choice - a page that reflows into a different typeface halfway
+  through reading it is worse than one that never had it - but without a
+  preload the request is not even issued until the CSS has been parsed, so a
+  cold visit missed the window every single time.
+
+  Measured, on a fresh profile: the first page rendered in the fallback
+  (a string measured 569px, exactly its width in serif), then the first
+  navigation rendered the same string at 537px, because by then the font was
+  in the HTTP cache and made the window. Every line on the site re-measured
+  on the first click. This is what fixes that.
+
+  `crossorigin` is required even though the file is same-origin: fonts are
+  fetched in CORS mode, and a preload without it is a *different* request
+  from the one the font engine makes, so the file downloads twice and the
+  preload is discarded unused.
+-->
+<link
+  rel="preload"
+  href={fontHref}
+  as="font"
+  type="font/woff2"
+  crossorigin
+/>
 
 <link rel="icon" href="/favicon.ico" sizes="32x32" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

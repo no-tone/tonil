@@ -10,9 +10,18 @@ import type { APIRoute } from "astro";
 // interactive login redirect the way a full page navigation can).
 const STATUS_URL = "https://api.no-tone.com/status";
 const ACCESS_JWT_HEADER = "Cf-Access-Jwt-Assertion";
-// The client gives up at 2.5s. Without a bound here the Worker keeps the
-// upstream request open long after nobody is waiting for it.
-const UPSTREAM_TIMEOUT_MS = 5000;
+// The middle of a three-link chain, and the numbers only make sense as a
+// set: the browser waits 5000ms (dashboard.ts), this waits 4000ms, and
+// apps/api's route is bounded at roughly 3000ms by its own probe and
+// Tailscale timeouts (app-health.ts). Each link gives up before the one
+// above it, so a slow upstream produces a diagnosable answer here rather
+// than an abort up there.
+//
+// It used to be 5000ms against an *unbounded* upstream while the browser
+// waited only 2500ms - every link had a deadline shorter than the thing it
+// was waiting for, which is how `/api/status` ended up intermittently
+// answering with nothing at all.
+const UPSTREAM_TIMEOUT_MS = 4000;
 
 const NO_IDENTITY_BODY = JSON.stringify({ apps: [], tailnet: {} });
 

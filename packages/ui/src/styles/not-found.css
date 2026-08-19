@@ -7,11 +7,18 @@
    products. Only the palette differs, and that is passed to the field at
    mount rather than being written here. */
 
+/* Inset by the display's safe area rather than pinned to 0, which puts the
+   whole page - panel, wordmark and sentence alike - inside the usable screen
+   in one line. Everything below is positioned against this element's padding
+   box, so each of them picks the offset up without repeating the sum.
+
+   The `padding: 12px` that used to be here did nothing: an absolutely
+   positioned child resolves its own insets against the padding box, so the
+   frame's `inset: 12px` was already measuring from this element's edge. */
 .notfound {
   position: fixed;
-  inset: 0;
+  inset: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
   overflow: hidden;
-  padding: 12px;
 }
 
 /* Clips, so the digits are cut by the panel's rounded rectangle rather than

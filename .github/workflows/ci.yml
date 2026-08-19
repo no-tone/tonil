@@ -9,6 +9,22 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Applies to every job below, none of which has its own `permissions` key.
+#
+# Both jobs do exactly one privileged thing - clone this repository - so read
+# access to its contents is the whole requirement. Deploying does not need
+# more: it authenticates to Cloudflare with CLOUDFLARE_API_TOKEN, which has
+# nothing to do with the GITHUB_TOKEN this scopes.
+#
+# Written down rather than left to the default, because the default is not a
+# fixed thing: it is whatever the repository or organisation is set to, it was
+# read-write for anything created before February 2023, and someone who has
+# never seen this file can change it. Stating it means the workflow keeps the
+# permissions it actually needs if it is forked, copied into another
+# organisation, or the account default moves under it.
+permissions:
+  contents: read
+
 jobs:
   ci:
     name: Build, lint, type-check, test

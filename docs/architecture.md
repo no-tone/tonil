@@ -71,6 +71,8 @@ an editorial choice, applied at the source so every surface inherits it.
 | Package | What it holds | Consumed by |
 |---|---|---|
 | `packages/ui` | `BaseHead.astro` (meta tags, theme bootstrap, OG/schema.org), design tokens + reset CSS, a vanilla-DOM component kit (`components.ts`/`styles/components.css`) - see `packages/ui/README.md` | `apps/web`, `apps/dashboard` |
+| `packages/ui` → `site/` | The chrome both properties share: `Footer.astro`, `Reveal.astro`, `ContextMenu.astro`, the filter, the language switch, the field controller | `apps/web`, `apps/dashboard` |
+| `packages/ui` → `styles/` | The frame (`shell.css`), the 404, and the look of anything that appears in both apps - the menu surface (`context-menu.css`, `filter.css`, sharing `--menu-*` tokens) and the view-transition at-rule | `apps/web`, `apps/dashboard` |
 | `packages/content` | Self-hosted app registry, GitHub-repo simplification, CSP-report summarizing, per-site info/markdown, **the CV** (`cv.ts`) | `apps/api`, `apps/dashboard`, `apps/web`, `apps/ssh-cv` |
 | `packages/validation` | Zod schemas, an RFC 7807 validation-failure hook for `@hono/zod-validator` | `apps/api` |
 | `packages/ui` → `gradient/`, `motion/` | Noise gradient field (canvas + worker) and smoothed scroll progress - see `packages/ui/README.md` | `apps/web` |

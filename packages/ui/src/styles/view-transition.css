@@ -1,0 +1,32 @@
+/* ============================================================
+   Cross-document view transitions
+   ============================================================
+
+   The at-rule that turns a real navigation into an animated one. It has to
+   be present on *both* documents involved in a navigation, which is why it
+   lives in a stylesheet every page inlines rather than on any single page.
+
+   This replaced Astro's <ClientRouter />, and the reason was CSP, not taste.
+
+   ClientRouter navigates by fetching the next page and handing it to
+   DOMParser. A parsed document inherits the *creating* document's policy, so
+   the incoming <style> tags are checked against a nonce that was minted for a
+   different response and refused. Measured, in production: exactly two
+   inline `style-src` violations per navigation, produced by the parse alone,
+   with the parsed document never inserted into anything. No nonce fixes
+   that - two documents cannot share one, and a fresh nonce per response is
+   the entire point of a nonce. Astro's own documentation says the same
+   thing from the other side: `security.csp` does not support ClientRouter.
+
+   A real navigation has no second document to reconcile. The policy in force
+   is the one that arrived with the page, every nonce matches by
+   construction, and the browser runs the animation itself.
+
+   Guarded by prefers-reduced-motion, which is how Astro guarded its own: the
+   transition is decoration, and the navigation happens either way. */
+
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}

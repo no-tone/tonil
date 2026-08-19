@@ -12,12 +12,19 @@ const { repos, ok } = await loadProjects();
 // hardcoded so it can never offer a filter that matches nothing.
 const languages = [...new Set(repos.map((r) => r.language))].sort();
 
-// The API caches at the edge for 15 minutes; there is no reason for this
-// page to be fresher than its own data.
-Astro.response.headers.set(
-  "Cache-Control",
-  "public, max-age=300, s-maxage=900",
-);
+// No Cache-Control is set here on purpose. There was a
+// `public, max-age=300, s-maxage=900` on this page, reasoning that the list
+// need not be fresher than the API's own 15-minute edge cache - but the
+// security middleware overwrites Cache-Control on every HTML response with
+// `private, max-age=0, must-revalidate`, and has to: the document carries a
+// per-request CSP nonce, so a shared cache handing it to a second visitor
+// would be handing them a nonce their response's policy never allowed.
+// Verified against production, where /work answers with the private value.
+//
+// A line that looks like a caching decision and is discarded one layer up is
+// worse than no line, so the reasoning is here instead of the header.
+// Freshness is bounded by services/projects.ts's 15-minute memo, in the one
+// place that can actually hold it.
 ---
 
 <SiteLayout

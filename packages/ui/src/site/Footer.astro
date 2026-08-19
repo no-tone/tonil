@@ -16,6 +16,21 @@
  * dashboard end on the same row: a handle, a rule, and a way to reach a
  * person. Everything that differs between them is a prop.
  *
+ * ---
+ *
+ * One row, with hairlines between the labels - and the row is meant to move.
+ *
+ * This was briefly restructured into a rule above and a cluster below, on the
+ * reasoning that an expanding reveal should not disturb its neighbours. That
+ * reasoning was wrong about what the disturbance is: the rules are the only
+ * items in the row with no fixed size, so a reveal widening from `contact` to
+ * a full address takes its width from them and they retract to make room. The
+ * line giving way *is* the value arriving. Removing that removed the effect.
+ *
+ * What genuinely did not fit was two of them open at once, and that is fixed
+ * where it belongs - `mountContact()` collapses every other revealed control,
+ * so only one is ever expanded and the row only ever has to absorb one.
+ *
  * Pair it with `mountContact()` from `@repo/ui/site`; the markup is inert
  * without it, and the fallback is a plain unrevealed label rather than a
  * broken control.
@@ -85,6 +100,7 @@ const {
     ))
   }
 
+  {/* The one rule that grows, so the row always spans the column. */}
   <span class="sitefoot__rule sitefoot__rule--grow" aria-hidden="true"></span>
 
   {
@@ -94,15 +110,27 @@ const {
       src/site/lang.ts for why both languages ship in one document.
     */
     lang && (
-      <span class="sitefoot__lang">
-        <button type="button" class="sitefoot__langbtn" data-lang-set="en" aria-pressed="true">
-          en
-        </button>
-        <button type="button" class="sitefoot__langbtn" data-lang-set="pt" aria-pressed="false">
-          pt
-        </button>
-      </span>
-      <span class="sitefoot__rule" aria-hidden="true" />
+      <>
+        <span class="sitefoot__lang">
+          <button
+            type="button"
+            class="sitefoot__langbtn"
+            data-lang-set="en"
+            aria-pressed="true"
+          >
+            en
+          </button>
+          <button
+            type="button"
+            class="sitefoot__langbtn"
+            data-lang-set="pt"
+            aria-pressed="false"
+          >
+            pt
+          </button>
+        </span>
+        <span class="sitefoot__rule" aria-hidden="true" />
+      </>
     )
   }
 
