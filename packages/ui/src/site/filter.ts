@@ -13,7 +13,7 @@
    as a list, so the markup stays the source of truth and a server-rendered
    page needs no hydration payload:
 
-     <li data-filter-item data-name="grafana" data-tags="Ops,Monitoring">
+     <li data-filter-item data-name="portainer" data-tags="Ops,Self-Hosted">
 */
 
 export interface FilterableItem {

@@ -3,7 +3,6 @@ export type AppTag =
   | "Personal"
   | "Network"
   | "Media"
-  | "Monitoring"
   | "Security"
   | "Ops";
 
@@ -64,20 +63,6 @@ export const SELF_HOSTED_APPS: SelfHostedApp[] = [
     tags: ["Media", "Self-Hosted"],
     iconUrl:
       "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/webp/open-cloud-dark.webp",
-  },
-  {
-    name: "Grafana",
-    href: "https://monitor.no-tone.com",
-    tags: ["Monitoring", "Ops", "Self-Hosted"],
-    iconUrl:
-      "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/webp/grafana.webp",
-  },
-  {
-    name: "Prometheus",
-    href: "https://targets.no-tone.com",
-    tags: ["Monitoring", "Ops", "Self-Hosted"],
-    iconUrl:
-      "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/webp/prometheus.webp",
   },
 ];
 

@@ -284,19 +284,19 @@ that.
 ### Can the rest of the self-hosted estate live here too?
 
 Short answer: yes, and it is the reason to take the A1 rather than the micro.
-The nine services in `packages/content`'s registry - Tailscale, Nginx,
-Portainer, Vaultwarden, Joplin, Immich, OpenCloud, Grafana, Prometheus - fit
-inside 2 OCPU / 12 GB without much thought. `ssh-cv` alongside them is noise.
+The seven services in `packages/content`'s registry - Tailscale, Nginx,
+Portainer, Vaultwarden, Joplin, Immich, OpenCloud - fit inside 2 OCPU / 12 GB
+without much thought. `ssh-cv` alongside them is noise.
 
 Three real constraints, in the order they will actually bite:
 
 **1. Storage, not CPU.** Always Free gives you 200 GB of block volume total,
 across every instance. Immich and OpenCloud are the whole question here: a
 photo library and a file share are the two things on that list that grow
-without asking. Everything else - Vaultwarden, Joplin, the Prometheus TSDB at
-a sane retention, config for the rest - is single-digit GB. Plan the 200 GB as
-"about 150 for media, 50 for everything else", and treat object storage or a
-different box as the answer when the photos outgrow it, because they will.
+without asking. Everything else - Vaultwarden, Joplin, config for the rest -
+is single-digit GB. Plan the 200 GB as "about 150 for media, 50 for
+everything else", and treat object storage or a different box as the answer
+when the photos outgrow it, because they will.
 
 **2. Immich wants more than its share.** Transcoding and the ML jobs (face
 and object detection) are the only genuinely heavy things on the list.

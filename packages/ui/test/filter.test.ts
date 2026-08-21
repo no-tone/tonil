@@ -11,7 +11,7 @@ describe("matchesFilter", () => {
   it("matches by case-insensitive substring of the name", () => {
     expect(matchesFilter(tile, "port", "")).toBe(true);
     expect(matchesFilter(tile, "PORT", "")).toBe(true);
-    expect(matchesFilter(tile, "grafana", "")).toBe(false);
+    expect(matchesFilter(tile, "immich", "")).toBe(false);
   });
 
   it("matches by tag membership in the comma-joined tag string", () => {
