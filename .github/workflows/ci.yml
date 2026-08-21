@@ -56,8 +56,24 @@ jobs:
       - name: Test
         run: bun run test
 
+      # Browsers cache to a global, user-level directory (not per-project),
+      # so installing once here covers both apps/web's and apps/dashboard's
+      # e2e suites.
+      - name: Install Playwright's browser
+        working-directory: apps/web
+        run: bun run playwright install --with-deps chromium
+
+      # Each app's e2e:server script builds and boots its own `wrangler dev`
+      # - see docs/engineering.md's "Per-request nonces and soft navigation"
+      # note for why this has to be the real Worker, not `astro dev`.
+      - name: E2E (Playwright)
+        run: bun run e2e
+
       - name: Build
         run: bun run build
+
+      - name: Check Worker bundle sizes
+        run: bun run check-bundle-size
 
       - name: Check for unused files/exports/dependencies (knip)
         run: bun run knip

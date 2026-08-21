@@ -17,6 +17,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@repo/typescript-config": "*",
+    "@vitest/coverage-v8": "catalog:",
     "astro": "catalog:",
     "jsdom": "^30.0.1",
     "typescript": "catalog:",

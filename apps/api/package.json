@@ -18,9 +18,10 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.21.3",
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
     "@repo/typescript-config": "*",
     "@types/node": "^26.1.1",
+    "@vitest/coverage-istanbul": "catalog:",
     "vitest": "catalog:",
     "wrangler": "catalog:"
   }

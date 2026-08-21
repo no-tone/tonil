@@ -10,7 +10,9 @@
     "deploy": "wrangler deploy",
     "cf-typegen": "wrangler types",
     "check-types": "astro check && tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "e2e:server": "astro build && wrangler dev --port 8787 --inspector-port 9230",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@astrojs/cloudflare": "catalog:",
@@ -24,8 +26,11 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
+    "@playwright/test": "catalog:",
+    "@repo/playwright-config": "*",
     "@repo/typescript-config": "*",
     "@types/node": "^26.1.1",
+    "@vitest/coverage-v8": "catalog:",
     "jsdom": "^30.0.1",
     "typescript": "catalog:",
     "vitest": "catalog:",

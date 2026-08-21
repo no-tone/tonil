@@ -5,18 +5,22 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "biome check .",
-    "format": "biome format --write .",
+    "format": "biome check --write --linter-enabled=false .",
     "check-types": "turbo run check-types",
     "test": "turbo run test",
+    "e2e": "turbo run e2e",
     "knip": "knip",
-    "check-cycles": "madge --circular --extensions ts,tsx,astro apps packages"
+    "check-cycles": "madge --circular --extensions ts,tsx,astro apps packages",
+    "check-bundle-size": "bun run scripts/check-bundle-size.ts",
+    "outdated": "bun outdated",
+    "ci": "bun run format && bun run lint && bun run check-types && bun run test && bun run build && bun run check-bundle-size && bun run e2e && bun run knip && bun run check-cycles && git diff --exit-code -- apps/ssh-cv/internal/cv/cv.json"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.8",
-    "@types/node": "^26.1.1",
+    "@biomejs/biome": "^2.5.10",
+    "@types/node": "^26.2.0",
     "knip": "^6.32.2",
     "madge": "^8.0.0",
-    "turbo": "^2.10.7",
+    "turbo": "^2.10.11",
     "typescript": "catalog:"
   },
   "engines": {
@@ -35,13 +39,16 @@
     ],
     "catalog": {
       "typescript": "5.9.2",
-      "vitest": "^4.1.10",
-      "hono": "^4.12.32",
+      "vitest": "4.1.11",
+      "@vitest/coverage-v8": "4.1.11",
+      "@vitest/coverage-istanbul": "4.1.11",
+      "hono": "^4.13.3",
       "zod": "^4.4.3",
-      "@hono/zod-validator": "^0.7.5",
-      "astro": "^7.2.2",
-      "@astrojs/cloudflare": "^14.2.1",
-      "wrangler": "^4.123.0"
+      "@hono/zod-validator": "^0.9.0",
+      "astro": "^7.2.4",
+      "@astrojs/cloudflare": "^14.2.3",
+      "wrangler": "^4.125.0",
+      "@playwright/test": "^1.57.0"
     }
   }
 }

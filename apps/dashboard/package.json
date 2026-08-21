@@ -12,7 +12,9 @@
     "deploy": "wrangler deploy",
     "dev": "astro dev",
     "preview": "astro build && wrangler dev",
-    "test": "vitest run"
+    "test": "vitest run",
+    "e2e:server": "astro build && wrangler dev --port 8788 --inspector-port 9231",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@astrojs/cloudflare": "catalog:",
@@ -23,7 +25,10 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@playwright/test": "catalog:",
+    "@repo/playwright-config": "*",
     "@repo/typescript-config": "*",
+    "@vitest/coverage-v8": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "wrangler": "catalog:"

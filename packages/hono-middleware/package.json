@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "@repo/typescript-config": "*",
+    "@vitest/coverage-v8": "catalog:",
     "astro": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

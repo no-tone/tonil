@@ -151,3 +151,7 @@ where it can actually be held (see `apps/web/src/services/projects.ts`).
 ## Ongoing deploys
 
 `.github/workflows/ci.yml` has a `deploy` job that runs after the `ci` job passes, on pushes to `main` only, and runs `wrangler deploy` for `apps/api`, `apps/web`, and `apps/dashboard` via `cloudflare/wrangler-action`. It authenticates with a `CLOUDFLARE_API_TOKEN` repository secret - create one at Cloudflare dashboard → My Profile → API Tokens → "Edit Cloudflare Workers" template scoped to this account, then add it as a secret at GitHub → repo Settings → Secrets and variables → Actions. Until that secret exists, the `deploy` job will fail (the `ci` job is unaffected). Merges to `main` that only touch one app still redeploy all three - cheap enough at this scale not to bother with path filtering.
+
+### Catching a Worker outgrowing its script-size limit before it does
+
+Cloudflare enforces a hard cap on how big a Worker's *bundled script* can be (compressed) - separate from, and much smaller than, the static-assets limit. The `ci` job's "Check Worker bundle sizes" step (`bun run check-bundle-size`, `scripts/check-bundle-size.ts`) dry-run bundles all three Workers the same way `wrangler deploy` would and reads the gzip size it reports, failing the build if any Worker exceeds a 2 MiB budget - current usage is 120-230 KiB per Worker, so this is early warning for an accidentally-bundled dependency, not a tight ceiling. Raise a Worker's budget in that file if legitimate growth trips it; don't raise it to silence a regression you haven't looked at.

@@ -10,5 +10,16 @@ export default defineConfig({
       },
     },
     setupFiles: ["./test/setup.ts"],
+    coverage: {
+      enabled: true,
+      provider: "v8",
+      reporter: ["text-summary"],
+      thresholds: {
+        statements: 85,
+        branches: 75,
+        functions: 80,
+        lines: 85,
+      },
+    },
   },
 });

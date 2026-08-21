@@ -1,0 +1,19 @@
+{
+  "name": "@repo/playwright-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@playwright/test": "catalog:"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "*",
+    "typescript": "catalog:"
+  }
+}
