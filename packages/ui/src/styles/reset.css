@@ -13,7 +13,6 @@
 }
 
 html {
-  scrollbar-color: var(--scrollbar) var(--bg);
   scrollbar-gutter: stable;
 }
 /* Deliberately NOT `html, body { height: 100% }`.
@@ -62,18 +61,6 @@ img {
 :focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-}
-
-*::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-*::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--scrollbar) 55%, transparent);
-  border-radius: 0;
-}
-*::-webkit-scrollbar-track {
-  background: transparent;
 }
 
 input[type="search"]::-webkit-search-cancel-button {

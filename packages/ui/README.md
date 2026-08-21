@@ -30,7 +30,7 @@ Every consumer needs `Astro.locals.cspNonce` typed in its own `env.d.ts` - see t
 ### Theming (`styles/tokens.css`, `styles/reset.css`, `theme-bootstrap.ts`)
 
 - `tokens.css` - `@font-face` declarations + every design token as a CSS custom property (`--bg`, `--text*`, `--accent*`, `--font-*`, spacing/radius/motion scales, …), with a `html[data-theme="light"]` block overriding the semantic tokens for light mode. Dark is the implicit default.
-- `reset.css` - box-sizing, scrollbar theming, focus rings, `.sr-only`, and other app-agnostic base styles. Deliberately does **not** set `body { overflow: hidden }` - that's a layout choice specific to apps/web's locked-viewport "desktop" page, so it stays in `apps/web/src/styles/desktop/base.css`.
+- `reset.css` - box-sizing, focus rings, `.sr-only`, and other app-agnostic base styles. Deliberately does **not** set `body { overflow: hidden }` - that's a layout choice specific to apps/web's locked-viewport "desktop" page, so it stays in `apps/web/src/styles/desktop/base.css`.
 - `theme-bootstrap.ts` - just the `Theme`/`TonilThemeHelpers` types for the `window.tonil` object `BaseHead.astro`'s inline script installs at runtime (`getStoredTheme`, `applyTheme`, `readTheme`, `syncTheme`, `setStoredTheme`, plus a `tonil:themechange` event for cross-widget sync). Each app's own theme-toggle script (`apps/web/src/scripts/desktop/theme.ts`, `apps/dashboard/src/scripts/theme.ts`) types against this instead of hand-declaring its own copy.
 
 ### Design-system primitives (`components.ts` + `styles/components.css`)
