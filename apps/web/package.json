@@ -41,7 +41,7 @@
     "bun-types": "catalog:",
     "chrome-launcher": "^1.2.1",
     "jsdom": "catalog:",
-    "lighthouse": "^13.4.1",
+    "lighthouse": "^13.5.0",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "wrangler": "catalog:"
