@@ -1,5 +1,13 @@
 # doti
 
+> **Retired.** [riptone/dotfiles](https://github.com/riptone/dotfiles) moved
+> to [chezmoi](https://chezmoi.io), which covers everything doti did (linking,
+> packages, encrypted secrets, per-OS config) without a custom installer to
+> maintain. The code is kept for reference and still builds, but its releases
+> and the `doti/v*` tags are deleted, so the install commands below no longer
+> work. Unfinished work (a gh + age vault and `fold: false` stow packages) is
+> in `git stash` on the machine where it was written, not in this tree.
+
 The dotfiles installer, as one binary.
 
 ```console
